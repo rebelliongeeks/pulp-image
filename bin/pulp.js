@@ -33,6 +33,7 @@ program
   .option('-v, --verbose', 'Verbose output')
   .addHelpText('after', `
 Examples:
+  $ pulp image.png --format webp --quality 95
   $ pulp image.png --width 800
   $ pulp image.png --format webp --out ./output
   $ pulp image.png --format jpg --quality 95

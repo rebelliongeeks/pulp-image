@@ -1,0 +1,20 @@
+# Development files
+.git/
+.gitignore
+node_modules/
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Documentation (optional - remove if you want docs included)
+docs/
+
+# Test files (if any)
+test/
+*.test.js
+
+# Development configs
+.env
+.env.local
+
