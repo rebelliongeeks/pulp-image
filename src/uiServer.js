@@ -1,6 +1,6 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 import { mkdirSync, writeFileSync, unlinkSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir, homedir } from 'os';
 import { randomUUID } from 'crypto';
