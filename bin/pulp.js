@@ -3,10 +3,10 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { banner } from '../src/banner.js';
-import { processImage } from '../src/processImage.js';
 import { formatBytes } from '../src/stats.js';
 import { planTasks } from '../src/planTasks.js';
 import { Reporter } from '../src/reporter.js';
+import { runJob } from '../src/runJob.js';
 import { statSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
@@ -102,46 +102,8 @@ For more examples and interactive documentation, see docs/index.html
       process.exit(1);
     }
     
-    // Initialize reporter for batch processing
-    const reporter = new Reporter();
-    
-    if (isFile) {
-      // Single file processing
-      try {
-        if (config.verbose) {
-          console.log(chalk.gray(`\nProcessing: ${inputPath}`));
-        }
-        
-        const result = await processImage(inputPath, config);
-        reporter.recordProcessed(result);
-        
-        // Display results
-        console.log(chalk.green(`\n✓ Processed: ${result.outputPath}`));
-        console.log(chalk.gray(`  Original: ${formatBytes(result.originalSize)} (${result.metadata.width}x${result.metadata.height})`));
-        console.log(chalk.gray(`  Final:    ${formatBytes(result.finalSize)}`));
-        console.log(chalk.gray(`  Saved:    ${formatBytes(result.bytesSaved)} (${result.percentSaved}%)`));
-        
-        // Warn if deletion failed
-        if (result.deleteError) {
-          console.log(chalk.yellow(`  Warning: Failed to delete original: ${result.deleteError}`));
-        }
-        
-      } catch (error) {
-        // Check if it's a skip (file exists or same path) or a real error
-        if (error.message.includes('already exists') || error.message.includes('Input and output paths are the same')) {
-          reporter.recordSkipped(inputPath, error.message);
-          console.log(chalk.yellow(`\n⚠ Skipped: ${inputPath}`));
-          console.log(chalk.gray(`  Reason: ${error.message}`));
-        } else {
-          reporter.recordFailed(inputPath, error);
-          console.error(chalk.red(`\n✗ Error: ${error.message}`));
-          if (config.verbose) {
-            console.error(error);
-          }
-        }
-      }
-    } else {
-      // Directory processing
+    // Handle directory planning for display (before runJob)
+    if (isDirectory) {
       let tasks;
       try {
         tasks = planTasks(inputPath);
@@ -156,39 +118,87 @@ For more examples and interactive documentation, see docs/index.html
       }
       
       console.log(chalk.gray(`\nFound ${tasks.length} image file(s) to process...\n`));
+    }
+    
+    // Use runJob for orchestration (no terminal output from runJob)
+    let results;
+    try {
+      if (isFile && config.verbose) {
+        console.log(chalk.gray(`\nProcessing: ${inputPath}`));
+      }
       
-      // Process each file
-      for (const filePath of tasks) {
-        try {
-          if (config.verbose) {
-            console.log(chalk.gray(`Processing: ${filePath}`));
-          }
-          
-          const result = await processImage(filePath, config);
-          reporter.recordProcessed(result);
-          reporter.printFileResult(result, config.verbose);
-          
-        } catch (error) {
-          // Check if it's a skip (file exists or same path) or a real error
-          if (error.message.includes('already exists') || error.message.includes('Input and output paths are the same')) {
-            reporter.recordSkipped(filePath, error.message);
-            if (config.verbose) {
-              console.log(chalk.yellow(`⚠ Skipped: ${filePath}`));
-              console.log(chalk.gray(`  Reason: ${error.message}`));
-            }
-          } else {
-            reporter.recordFailed(filePath, error);
-            console.error(chalk.red(`✗ Failed: ${filePath}`));
-            if (config.verbose) {
-              console.error(chalk.gray(`  Error: ${error.message}`));
-            }
-          }
+      results = await runJob(inputPath, config);
+    } catch (error) {
+      console.error(chalk.red(`\nError: ${error.message}`));
+      if (config.verbose) {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+    
+    // Display results exactly as before
+    if (isFile) {
+      // Single file: show detailed result or skip/error
+      if (results.processed.length > 0) {
+        const result = results.processed[0];
+        console.log(chalk.green(`\n✓ Processed: ${result.outputPath}`));
+        console.log(chalk.gray(`  Original: ${formatBytes(result.originalSize)} (${result.metadata.width}x${result.metadata.height})`));
+        console.log(chalk.gray(`  Final:    ${formatBytes(result.finalSize)}`));
+        console.log(chalk.gray(`  Saved:    ${formatBytes(result.bytesSaved)} (${result.percentSaved}%)`));
+        
+        if (result.deleteError) {
+          console.log(chalk.yellow(`  Warning: Failed to delete original: ${result.deleteError}`));
         }
+      } else if (results.skipped.length > 0) {
+        const skipped = results.skipped[0];
+        console.log(chalk.yellow(`\n⚠ Skipped: ${skipped.filePath}`));
+        console.log(chalk.gray(`  Reason: ${skipped.reason}`));
+      } else if (results.failed.length > 0) {
+        const failed = results.failed[0];
+        console.error(chalk.red(`\n✗ Error: ${failed.error}`));
+        if (config.verbose) {
+          console.error(failed);
+        }
+      }
+    } else {
+      // Directory: show per-file results in verbose mode, then summary
+      if (config.verbose) {
+        // Reconstruct reporter for per-file display
+        const reporter = new Reporter();
+        results.processed.forEach(r => reporter.recordProcessed(r));
+        results.skipped.forEach(s => reporter.recordSkipped(s.filePath, s.reason));
+        results.failed.forEach(f => reporter.recordFailed(f.filePath, new Error(f.error)));
+        
+        // Show per-file results
+        results.processed.forEach(result => {
+          reporter.printFileResult(result, true);
+        });
+        
+        // Show skipped files
+        results.skipped.forEach(({ filePath, reason }) => {
+          console.log(chalk.yellow(`⚠ Skipped: ${filePath}`));
+          console.log(chalk.gray(`  Reason: ${reason}`));
+        });
+        
+        // Show failed files
+        results.failed.forEach(({ filePath, error }) => {
+          console.error(chalk.red(`✗ Failed: ${filePath}`));
+          console.error(chalk.gray(`  Error: ${error}`));
+        });
+      } else {
+        // Non-verbose: just show failures
+        results.failed.forEach(({ filePath, error }) => {
+          console.error(chalk.red(`✗ Failed: ${filePath}`));
+        });
       }
     }
     
     // Print summary for batch processing or if there were issues
-    if (isDirectory || reporter.skipped.length > 0 || reporter.failed.length > 0) {
+    if (isDirectory || results.skipped.length > 0 || results.failed.length > 0) {
+      const reporter = new Reporter();
+      results.processed.forEach(r => reporter.recordProcessed(r));
+      results.skipped.forEach(s => reporter.recordSkipped(s.filePath, s.reason));
+      results.failed.forEach(f => reporter.recordFailed(f.filePath, new Error(f.error)));
       reporter.printSummary(config.verbose);
     }
   });
