@@ -10,7 +10,7 @@
   <div class="container">
     <header class="header">
       <div class="brand">
-        <div class="logo">🍊</div>
+        <img src="/assets/pulp-logo-white.svg" alt="Pulp Image logo" class="logo">
         <div class="brand-text">
           <h1>Pulp Image</h1>
           <p class="brand-subtitle">by Rebellion Geeks <span class="version" id="version">v0.1.0</span></p>
@@ -74,6 +74,12 @@
               <div id="file-list-detail" class="file-list-detail" style="display: none;">
                 <!-- File list will be populated here -->
               </div>
+              <div style="margin-top: 0.5rem;">
+                <button type="button" id="toggle-ignored-files" class="toggle-file-list-btn toggle-file-list-btn-secondary" style="display: none;">Show ignored files</button>
+              </div>
+              <div id="ignored-files-list" class="file-list-detail ignored-files-list" style="display: none;">
+                <!-- Ignored files will be populated here -->
+              </div>
             </div>
           </div>
 
@@ -102,9 +108,12 @@
             </details>
             
             <div class="form-actions-inline" style="margin-top: 0.5rem;">
-              <button type="button" id="open-results-folder" class="button button-secondary" style="display: none;">
-                Open results folder
-              </button>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button type="button" id="open-results-folder" class="button button-secondary" style="display: none;">
+                  Open results folder
+                </button>
+                <div id="open-results-folder-helper" class="button-helper-text" style="display: none;"></div>
+              </div>
             </div>
           </div>
 
@@ -251,11 +260,14 @@
 
         <!-- Results Section -->
         <div id="results-section" class="results-section" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 class="results-title" style="margin: 0;">Processing Results</h2>
-            <button type="button" id="open-results-folder-results" class="button button-secondary" style="display: none;">
-              Open results folder
-            </button>
+          <div style="margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h2 class="results-title" style="margin: 0;">Processing Results</h2>
+              <button type="button" id="open-results-folder-results" class="button button-secondary" style="display: none;">
+                Open results folder
+              </button>
+            </div>
+            <div id="open-results-folder-results-helper" class="button-helper-text" style="display: none; text-align: right;"></div>
           </div>
           <div id="results-content"></div>
         </div>

@@ -10,6 +10,9 @@ const FORMAT_INFO = {
 
 // State
 let selectedFiles = [];
+let ignoredFiles = []; // Store ignored non-image files
+let ignoredFilesCount = 0; // Track ignored non-image files
+let showIgnoredFiles = false; // Toggle state for showing ignored files
 let processing = false;
 let resolvedOutputPath = null; // Store resolved output path to prevent clearing
 
@@ -42,6 +45,8 @@ const inputPreview = document.getElementById('input-preview');
 const fileListSummary = document.getElementById('file-list-summary-text');
 const toggleFileListBtn = document.getElementById('toggle-file-list');
 const fileListDetail = document.getElementById('file-list-detail');
+const toggleIgnoredFilesBtn = document.getElementById('toggle-ignored-files');
+const ignoredFilesList = document.getElementById('ignored-files-list');
 const renamePreview = document.getElementById('rename-preview');
 const suffixPreview = document.getElementById('suffix-preview');
 const autoSuffixPreview = document.getElementById('auto-suffix-preview');
@@ -49,6 +54,8 @@ const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
 const inputHelper = document.getElementById('input-helper');
 const outputDirHelper = document.getElementById('output-dir-helper');
+const openResultsFolderHelper = document.getElementById('open-results-folder-helper');
+const openResultsFolderResultsHelper = document.getElementById('open-results-folder-results-helper');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -141,9 +148,10 @@ function setupForm() {
   inputSourceFiles.addEventListener('change', (e) => {
     const allFiles = Array.from(e.target.files);
     selectedFiles = filterImageFiles(allFiles);
-    const ignoredCount = allFiles.length - selectedFiles.length;
-    if (ignoredCount > 0) {
-      console.log(`Ignored ${ignoredCount} non-image file(s)`);
+    ignoredFiles = Array.from(allFiles).filter(file => !selectedFiles.includes(file));
+    ignoredFilesCount = ignoredFiles.length;
+    if (ignoredFilesCount > 0) {
+      console.log(`Ignored ${ignoredFilesCount} non-image file(s)`);
     }
     updateInputPreview();
     updateUI().catch(console.error);
@@ -153,13 +161,22 @@ function setupForm() {
   inputSourceFolder.addEventListener('change', (e) => {
     const allFiles = Array.from(e.target.files);
     selectedFiles = filterImageFiles(allFiles);
-    const ignoredCount = allFiles.length - selectedFiles.length;
-    if (ignoredCount > 0) {
-      console.log(`Ignored ${ignoredCount} non-image file(s)`);
+    ignoredFiles = Array.from(allFiles).filter(file => !selectedFiles.includes(file));
+    ignoredFilesCount = ignoredFiles.length;
+    if (ignoredFilesCount > 0) {
+      console.log(`Ignored ${ignoredFilesCount} non-image file(s)`);
     }
     updateInputPreview();
     updateUI().catch(console.error);
   });
+  
+  // Toggle ignored files
+  if (toggleIgnoredFilesBtn) {
+    toggleIgnoredFilesBtn.addEventListener('click', () => {
+      showIgnoredFiles = !showIgnoredFiles;
+      updateInputPreview();
+    });
+  }
   
   // Custom output directory toggle
   useCustomOutput.addEventListener('change', async () => {
@@ -185,7 +202,13 @@ function setupForm() {
   
   // Open results folder button (near output directory) - with null check
   if (openResultsFolderBtn) {
-    openResultsFolderBtn.addEventListener('click', async () => {
+    openResultsFolderBtn.addEventListener('click', async (e) => {
+      // Prevent clicks when disabled
+      if (e.target.disabled === true) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       const outputPath = outputDir ? outputDir.value : null;
       if (outputPath) {
         await openResultsFolder(outputPath);
@@ -197,7 +220,13 @@ function setupForm() {
   
   // Open results folder button (near results) - with null check
   if (openResultsFolderResultsBtn) {
-    openResultsFolderResultsBtn.addEventListener('click', async () => {
+    openResultsFolderResultsBtn.addEventListener('click', async (e) => {
+      // Prevent clicks when disabled
+      if (e.target.disabled === true) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       const outputPath = outputDir ? outputDir.value : null;
       if (outputPath) {
         await openResultsFolder(outputPath);
@@ -216,10 +245,13 @@ function setupForm() {
         body: JSON.stringify({ path: path })
       });
       if (!response.ok) {
-        throw new Error('Failed to open folder');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Could not open folder automatically.');
       }
     } catch (error) {
-      alert(`Error opening folder: ${error.message}`);
+      // Show user-friendly error message
+      const errorMsg = error.message || 'Could not open folder automatically.';
+      alert(errorMsg);
     }
   }
   
@@ -359,16 +391,22 @@ function updateHelperTexts() {
 
 // Update Input Preview
 function updateInputPreview() {
-  if (selectedFiles.length === 0) {
+  if (selectedFiles.length === 0 && ignoredFilesCount === 0) {
     fileListSummary.textContent = 'No files selected';
     toggleFileListBtn.style.display = 'none';
     fileListDetail.style.display = 'none';
+    if (toggleIgnoredFilesBtn) toggleIgnoredFilesBtn.style.display = 'none';
+    if (ignoredFilesList) ignoredFilesList.style.display = 'none';
     return;
   }
   
-  // Update summary - always show FILTERED count (selectedFiles is already filtered)
+  // Update summary - show filtered count and ignored count if any
   const filteredCount = selectedFiles.length;
-  fileListSummary.textContent = `${filteredCount} file${filteredCount === 1 ? '' : 's'} selected`;
+  let summaryText = `${filteredCount} image file${filteredCount === 1 ? '' : 's'} selected`;
+  if (ignoredFilesCount > 0) {
+    summaryText += ` (${ignoredFilesCount} non-image ${ignoredFilesCount === 1 ? 'file' : 'files'} ignored)`;
+  }
+  fileListSummary.textContent = summaryText;
   
   // Always show toggle button (even for single file)
   toggleFileListBtn.style.display = 'inline-block';
@@ -386,6 +424,31 @@ function updateInputPreview() {
     `;
     fileListDetail.appendChild(item);
   });
+  
+  // Update ignored files section
+  if (ignoredFilesCount > 0 && toggleIgnoredFilesBtn && ignoredFilesList) {
+    toggleIgnoredFilesBtn.style.display = 'inline-block';
+    toggleIgnoredFilesBtn.textContent = showIgnoredFiles ? 'Hide ignored files' : 'Show ignored files';
+    
+    if (showIgnoredFiles) {
+      ignoredFilesList.style.display = 'block';
+      ignoredFilesList.innerHTML = '';
+      ignoredFiles.forEach((file) => {
+        const item = document.createElement('div');
+        item.className = 'file-list-item ignored-file';
+        item.innerHTML = `
+          <span class="file-list-item-name">${escapeHtml(file.name)}</span>
+          <span class="file-list-item-badge">Ignored</span>
+        `;
+        ignoredFilesList.appendChild(item);
+      });
+    } else {
+      ignoredFilesList.style.display = 'none';
+    }
+  } else {
+    if (toggleIgnoredFilesBtn) toggleIgnoredFilesBtn.style.display = 'none';
+    if (ignoredFilesList) ignoredFilesList.style.display = 'none';
+  }
 }
 
 // Toggle file list
@@ -615,6 +678,13 @@ function validateForm() {
 async function handleSubmit(e) {
   e.preventDefault();
   
+  // Prevent submission if button is disabled
+  if (processButton && processButton.disabled === true) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  
   // Prevent double submission
   if (processing) {
     console.warn('Processing already in progress');
@@ -708,21 +778,53 @@ async function handleSubmit(e) {
         outputDir.value = results.outputPath;
       }
       resolvedOutputPath = results.outputPath; // Keep it stable
-      if (openResultsFolderBtn) {
-        openResultsFolderBtn.style.display = 'inline-block';
-      }
-      if (openResultsFolderResultsBtn) {
-        openResultsFolderResultsBtn.style.display = 'inline-block';
-      }
     }
     
     displayResults(results);
     
+    // Enable/disable "Open results folder" buttons based on whether any files were processed
+    const hasProcessedFiles = results.processed && results.processed.length > 0;
+    const explanationText = 'No output files were created.\nFix the errors above and process again to enable this action.';
+    
+    if (openResultsFolderBtn) {
+      if (hasProcessedFiles) {
+        openResultsFolderBtn.style.display = 'inline-block';
+        openResultsFolderBtn.disabled = false;
+        if (openResultsFolderHelper) {
+          openResultsFolderHelper.style.display = 'none';
+        }
+      } else {
+        openResultsFolderBtn.style.display = 'inline-block';
+        openResultsFolderBtn.disabled = true;
+        if (openResultsFolderHelper) {
+          openResultsFolderHelper.textContent = explanationText;
+          openResultsFolderHelper.style.display = 'block';
+        }
+      }
+    }
+    if (openResultsFolderResultsBtn) {
+      if (hasProcessedFiles) {
+        openResultsFolderResultsBtn.style.display = 'inline-block';
+        openResultsFolderResultsBtn.disabled = false;
+        if (openResultsFolderResultsHelper) {
+          openResultsFolderResultsHelper.style.display = 'none';
+        }
+      } else {
+        openResultsFolderResultsBtn.style.display = 'inline-block';
+        openResultsFolderResultsBtn.disabled = true;
+        if (openResultsFolderResultsHelper) {
+          openResultsFolderResultsHelper.textContent = explanationText;
+          openResultsFolderResultsHelper.style.display = 'block';
+        }
+      }
+    }
+    
   } catch (error) {
     console.error('Processing error:', error);
-    // Show user-friendly error message
-    const errorMsg = error.message || 'An unexpected error occurred during processing.';
-    alert(`Error: ${errorMsg}`);
+    // Sanitize error message for UI
+    const rawError = error.message || 'An unexpected error occurred during processing.';
+    const sanitizedError = sanitizeErrorMessage(rawError);
+    alert(`Error: ${sanitizedError}`);
     
     // Show error in results section if available
     if (resultsSection && resultsContent) {
@@ -733,7 +835,7 @@ async function handleSubmit(e) {
             <div class="result-item-status error">Error</div>
           </div>
           <div class="result-item-details">
-            <div class="result-detail">${escapeHtml(errorMsg)}</div>
+            <div class="result-detail">${escapeHtml(sanitizedError)}</div>
           </div>
         </div>
       `;
@@ -765,13 +867,15 @@ function displayResults(results) {
     results.skipped.forEach(skipped => {
       const item = document.createElement('div');
       item.className = 'result-item';
+      const fileName = extractFileName(skipped.filePath);
+      const sanitizedReason = sanitizeErrorMessage(skipped.reason);
       item.innerHTML = `
         <div class="result-item-header">
-          <div class="result-item-title">${escapeHtml(skipped.filePath)}</div>
+          <div class="result-item-title">${escapeHtml(fileName)}</div>
           <div class="result-item-status">Skipped</div>
         </div>
         <div class="result-item-details">
-          <div class="result-detail">Reason: ${escapeHtml(skipped.reason)}</div>
+          <div class="result-detail">${escapeHtml(sanitizedReason)}</div>
         </div>
       `;
       resultsContent.appendChild(item);
@@ -782,13 +886,16 @@ function displayResults(results) {
     results.failed.forEach(failed => {
       const item = document.createElement('div');
       item.className = 'result-item error';
+      // Sanitize error message and file path
+      const sanitizedError = sanitizeErrorMessage(failed.error);
+      const fileName = extractFileName(failed.filePath);
       item.innerHTML = `
         <div class="result-item-header">
-          <div class="result-item-title">${escapeHtml(failed.filePath)}</div>
+          <div class="result-item-title">${escapeHtml(fileName)}</div>
           <div class="result-item-status error">Failed</div>
         </div>
         <div class="result-item-details">
-          <div class="result-detail">Error: ${escapeHtml(failed.error)}</div>
+          <div class="result-detail">${escapeHtml(sanitizedError)}</div>
         </div>
       `;
       resultsContent.appendChild(item);
@@ -817,7 +924,7 @@ function createResultItem(result, status) {
   
   item.innerHTML = `
     <div class="result-item-header">
-      <div class="result-item-title">${escapeHtml(result.outputPath)}</div>
+      <div class="result-item-title">${escapeHtml(extractFileName(result.outputPath))}</div>
       <div class="result-item-status ${status}">Processed</div>
     </div>
     <div class="result-item-details">
@@ -899,10 +1006,76 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Sanitize error messages for UI display
+function sanitizeErrorMessage(errorMsg) {
+  if (!errorMsg) return 'An error occurred.';
+  
+  let sanitized = errorMsg;
+  
+  // Remove temp paths
+  sanitized = sanitized.replace(/\/tmp\/[^\s]+/g, '');
+  sanitized = sanitized.replace(/[^\s]*pulp-image-[^\s]+/g, '');
+  
+  // Remove CLI flags and technical jargon
+  sanitized = sanitized.replace(/--[a-z-]+/g, '');
+  sanitized = sanitized.replace(/Use --alpha-mode flatten/g, '');
+  sanitized = sanitized.replace(/Use --overwrite/g, '');
+  
+  // Transform common error messages to user-friendly versions
+  if (sanitized.includes('transparency') && sanitized.includes('does not support')) {
+    const formatMatch = sanitized.match(/format (\w+)/i);
+    const format = formatMatch ? formatMatch[1].toUpperCase() : 'this format';
+    return `This image contains transparency, but ${format} does not support transparency.\n\nChoose a format like PNG or WebP, or enable background flattening.`;
+  }
+  
+  if (sanitized.includes('already exists')) {
+    return 'This file already exists. Enable "Overwrite Existing Files" to replace it.';
+  }
+  
+  if (sanitized.includes('Input and output paths are the same')) {
+    return 'Input and output are the same file. Enable "Overwrite Existing Files" to process in place.';
+  }
+  
+  if (sanitized.includes('Input file not found')) {
+    return 'The selected file could not be found. Please select the file again.';
+  }
+  
+  if (sanitized.includes('Unsupported output format')) {
+    return 'The selected output format is not supported. Please choose PNG, JPG, WebP, or AVIF.';
+  }
+  
+  // Clean up extra whitespace
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
+  
+  // If message is too technical or empty, provide generic message
+  if (sanitized.length === 0 || sanitized.includes('Error:') || sanitized.includes('at ')) {
+    return 'An error occurred while processing this image. Please check the image file and try again.';
+  }
+  
+  return sanitized;
+}
+
+// Extract just the filename from a path
+function extractFileName(filePath) {
+  if (!filePath) return 'Unknown file';
+  // Remove temp paths
+  if (filePath.includes('/tmp/') || filePath.includes('pulp-image-')) {
+    // Try to extract original filename from path
+    const parts = filePath.split('/');
+    return parts[parts.length - 1] || 'File';
+  }
+  // Return just the filename
+  const parts = filePath.split(/[/\\]/);
+  return parts[parts.length - 1] || filePath;
+}
+
 // Reset Form
 function resetForm() {
   form.reset();
   selectedFiles = [];
+  ignoredFiles = [];
+  ignoredFilesCount = 0;
+  showIgnoredFiles = false;
   inputSourceFiles.value = '';
   inputSourceFolder.value = '';
   qualityValue.textContent = '80';
@@ -913,8 +1086,16 @@ function resetForm() {
   outputDir.readOnly = true;
   outputDir.style.background = '';
   openResultsFolderBtn.style.display = 'none';
+  openResultsFolderBtn.disabled = true;
+  if (openResultsFolderHelper) {
+    openResultsFolderHelper.style.display = 'none';
+  }
   if (openResultsFolderResultsBtn) {
     openResultsFolderResultsBtn.style.display = 'none';
+    openResultsFolderResultsBtn.disabled = true;
+  }
+  if (openResultsFolderResultsHelper) {
+    openResultsFolderResultsHelper.style.display = 'none';
   }
   updateUI().catch(console.error);
   resultsSection.style.display = 'none';

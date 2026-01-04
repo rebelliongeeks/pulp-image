@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import open from 'open';
 import { runJob } from './runJob.js';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -251,24 +251,48 @@ export async function startUIServer(port = 3000) {
       // Determine OS and use appropriate command
       const platform = process.platform;
       let command;
+      let options = {};
       
       if (platform === 'darwin') {
         // macOS
         command = `open "${path}"`;
       } else if (platform === 'win32') {
-        // Windows
-        command = `start "" "${path}"`;
+        // Windows - use explorer to open in foreground
+        command = `explorer "${path}"`;
       } else {
-        // Linux and others
-        command = `xdg-open "${path}"`;
+        // Linux and others - suppress stderr to avoid Wayland/Gnome noise
+        command = `xdg-open "${path}" 2>/dev/null || true`;
+        // Use shell to properly handle stderr redirection
+        options = { shell: '/bin/bash' };
       }
       
-      await execAsync(command);
-      res.json({ success: true });
+      try {
+        // Suppress stderr on Linux to avoid noisy output
+        if (platform === 'linux' || (platform !== 'darwin' && platform !== 'win32')) {
+          // Use spawn with stderr redirected instead of execAsync for better control
+          await new Promise((resolve, reject) => {
+            const child = spawn('xdg-open', [path], {
+              stdio: ['ignore', 'ignore', 'ignore'], // Suppress all output
+              detached: true
+            });
+            child.unref(); // Allow parent to exit independently
+            // Don't wait for child to exit - xdg-open may spawn other processes
+            setTimeout(resolve, 100); // Give it a moment to start
+          });
+        } else {
+          await execAsync(command, options);
+        }
+        res.json({ success: true });
+      } catch (execError) {
+        // Don't expose raw OS errors to user
+        console.error('Error opening folder:', execError);
+        res.status(500).json({ error: 'Could not open folder automatically.' });
+      }
       
     } catch (error) {
+      // Don't expose raw errors to user
       console.error('Error opening folder:', error);
-      res.status(500).json({ error: error.message || 'Failed to open folder' });
+      res.status(500).json({ error: 'Could not open folder automatically.' });
     }
   });
   
@@ -340,15 +364,16 @@ export async function startUIServer(port = 3000) {
   
   // Start server
   return new Promise((resolve, reject) => {
-    const server = app.listen(port, 'localhost', () => {
+      const server = app.listen(port, 'localhost', () => {
       const url = `http://localhost:${port}`;
-      console.log(`\n🌐 UI server running at ${url}`);
+      console.log(`\n🌐 Pulp Image UI is running\n`);
+      console.log(`Open in your browser:\n${url}\n`);
+      console.log('Tip: Ctrl + Click the link above if it doesn\'t open automatically.\n');
       console.log('Press Ctrl+C to stop\n');
       
-      // Open browser automatically
-      open(url).catch(err => {
-        console.warn(`Warning: Could not open browser automatically: ${err.message}`);
-        console.warn(`Please open ${url} manually in your browser.`);
+      // Open browser automatically (best-effort)
+      open(url).catch(() => {
+        // Silently fail - user can use Ctrl+Click or copy URL
       });
       
       resolve({ server, url, app });
