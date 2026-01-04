@@ -4,12 +4,11 @@ import { mkdirSync } from 'fs';
 /**
  * Builds the output path for an image file
  */
-export function buildOutputPath(inputPath, config) {
-  const { out, format, width, height, suffix, autoSuffix } = config;
+export function buildOutputPath(inputPath, config, fileIndex = null) {
+  const { out, format, width, height, suffix, autoSuffix, renamePattern } = config;
   
-  // Ensure output directory exists
+  // Resolve output directory (but don't create it yet - will be created when writing)
   const outputDir = resolve(out);
-  mkdirSync(outputDir, { recursive: true });
   
   // Get base filename and extension
   const baseName = basename(inputPath);
@@ -18,7 +17,25 @@ export function buildOutputPath(inputPath, config) {
   
   // Determine output extension
   const outputExt = format ? `.${format}` : inputExt;
+  const outputExtNoDot = outputExt.slice(1); // Remove leading dot
   
+  // If rename pattern is provided, use it
+  if (renamePattern) {
+    let outputFilename = renamePattern
+      .replace(/{name}/g, nameWithoutExt)
+      .replace(/{ext}/g, outputExtNoDot)
+      .replace(/{index}/g, fileIndex !== null ? String(fileIndex + 1) : '1');
+    
+    // Ensure we have an extension
+    if (!outputFilename.includes('.')) {
+      outputFilename += outputExt;
+    }
+    
+    const outputPath = join(outputDir, outputFilename);
+    return outputPath;
+  }
+  
+  // Original logic (suffix-based naming)
   // Build suffix parts
   const suffixParts = [];
   

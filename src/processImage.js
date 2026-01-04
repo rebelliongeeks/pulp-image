@@ -13,8 +13,11 @@ import { calculateStats, formatBytes } from './stats.js';
 
 /**
  * Processes a single image file
+ * @param {string} inputPath - Input file path
+ * @param {object} config - Processing configuration
+ * @param {number} fileIndex - Optional 0-based index for batch processing (used in rename patterns)
  */
-export async function processImage(inputPath, config) {
+export async function processImage(inputPath, config, fileIndex = null) {
   const resolvedInputPath = resolve(inputPath);
   
   // Check if input file exists
@@ -41,7 +44,7 @@ export async function processImage(inputPath, config) {
   }
   
   // Build output path
-  const outputPath = buildOutputPath(resolvedInputPath, config);
+  const outputPath = buildOutputPath(resolvedInputPath, config, fileIndex);
   
   // Safety check: If input and output paths are the same, require --overwrite
   // This prevents accidental in-place overwrites
@@ -132,6 +135,12 @@ export async function processImage(inputPath, config) {
       break;
   }
   
+  // Ensure output directory exists (only create when about to write)
+  const { mkdirSync } = await import('fs');
+  const { dirname } = await import('path');
+  const outputDir = dirname(outputPath);
+  mkdirSync(outputDir, { recursive: true });
+  
   // Write output
   await pipeline.toFile(outputPath);
   
@@ -144,14 +153,21 @@ export async function processImage(inputPath, config) {
   
   // Handle delete original if requested
   // Safety: Only delete after successful write, and only if paths differ
+  // This prevents accidental deletion of the output file or same-path scenarios
   let deleteError = null;
   if (config.deleteOriginal && resolvedInputPath !== outputPath) {
     try {
       const { unlinkSync } = await import('fs');
-      unlinkSync(resolvedInputPath);
+      // Verify file still exists before attempting deletion
+      if (existsSync(resolvedInputPath)) {
+        unlinkSync(resolvedInputPath);
+      } else {
+        console.warn(`Original file already deleted or not found: ${resolvedInputPath}`);
+      }
     } catch (err) {
       // Don't fail the entire operation if deletion fails
-      // Store the error to be included in the result
+      // Log warning but continue processing
+      console.warn(`Failed to delete original file ${resolvedInputPath}:`, err.message);
       deleteError = err;
     }
   }

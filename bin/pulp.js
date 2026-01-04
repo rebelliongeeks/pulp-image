@@ -22,7 +22,7 @@ program
   .option('-w, --width <number>', 'Output width in pixels')
   .option('-h, --height <number>', 'Output height in pixels')
   .option('-f, --format <format>', 'Output format (png, jpg, webp, avif)')
-  .option('-o, --out <dir>', 'Output directory (default: ./dist). Creates directory if it doesn\'t exist. Keeps originals safe by saving processed images separately.')
+  .option('-o, --out <dir>', 'Output directory (default: ./pulp-image-results). Creates directory if it doesn\'t exist. Keeps originals safe by saving processed images separately.')
   .option('--suffix <text>', 'Custom suffix to add before extension')
   .option('--auto-suffix', 'Automatically add size-based suffix')
   .option('--quality <number>', 'Quality for lossy formats (1-100). Defaults: JPG=80, WebP=80, AVIF=50')
@@ -43,10 +43,10 @@ Examples:
   $ pulp ./images --format webp --out ./output --verbose
   $ pulp image.png --format jpg --background "#ff0000"
   $ pulp image.png --format avif --quality 70
-  $ pulp ./images --width 800 --auto-suffix --suffix "thumb" --out ./dist
+  $ pulp ./images --width 800 --auto-suffix --suffix "thumb" --out ./pulp-image-results
 
 About --out:
-  The --out option specifies where processed images are saved (default: ./dist).
+  The --out option specifies where processed images are saved (default: ./pulp-image-results).
   This keeps your original files safe and organizes outputs in a dedicated folder.
   The output directory is created automatically if it doesn't exist.
 
@@ -69,7 +69,7 @@ For more examples and interactive documentation, see docs/index.html
       width: options.width ? parseInt(options.width, 10) : null,
       height: options.height ? parseInt(options.height, 10) : null,
       format: options.format || null,
-      out: options.out || './dist',
+      out: options.out || './pulp-image-results',
       suffix: options.suffix || null,
       autoSuffix: options.autoSuffix || false,
       quality: options.quality ? parseInt(options.quality, 10) : null,

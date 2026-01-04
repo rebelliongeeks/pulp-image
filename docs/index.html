@@ -244,7 +244,7 @@
                 </p>
                 <div class="info-box">
                     <strong>💡 Why --out?</strong> The <code>--out</code> option specifies where processed images are saved. 
-                    Default is <code>./dist</code>. This keeps your originals safe and organizes outputs in a dedicated folder.
+                    Default is <code>./pulp-image-results</code>. This keeps your originals safe and organizes outputs in a dedicated folder.
                 </div>
             </div>
 
@@ -352,7 +352,7 @@
                         <li>
                             <strong>-o, --out &lt;dir&gt;</strong>
                             <span class="badge badge-warning">Output</span>
-                            <p>Output directory for processed images. Default: <code>./dist</code>. Creates directory if it doesn't exist.</p>
+                            <p>Output directory for processed images. Default: <code>./pulp-image-results</code>. Creates directory if it doesn't exist.</p>
                         </li>
                         <li>
                             <strong>--suffix &lt;text&gt;</strong>
@@ -705,17 +705,17 @@
                     <div class="example-grid">
                         <div class="example-card">
                             <h4>Safe Processing</h4>
-                            <code>pulp image.png --format webp --out ./dist</code>
-                            <p>Output goes to <code>./dist</code>, original is safe</p>
+                            <code>pulp image.png --format webp --out ./pulp-image-results</code>
+                            <p>Output goes to <code>./pulp-image-results</code>, original is safe</p>
                         </div>
                         <div class="example-card">
                             <h4>Overwrite Existing</h4>
-                            <code>pulp image.png --format webp --out ./dist --overwrite</code>
+                            <code>pulp image.png --format webp --out ./pulp-image-results --overwrite</code>
                             <p>Overwrites existing output files</p>
                         </div>
                         <div class="example-card">
                             <h4>Delete After Processing</h4>
-                            <code>pulp image.png --format webp --out ./dist --delete-original</code>
+                            <code>pulp image.png --format webp --out ./pulp-image-results --delete-original</code>
                             <p>Deletes original only after successful processing</p>
                         </div>
                     </div>

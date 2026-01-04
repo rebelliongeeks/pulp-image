@@ -122,7 +122,7 @@ pulp [input] [options]
 - `-f, --format <format>` - Output format (png, jpg, webp, avif)
 
 **Output:**
-- `-o, --out <dir>` - Output directory (default: ./dist)
+- `-o, --out <dir>` - Output directory (default: ./pulp-image-results)
 - `--suffix <text>` - Custom suffix to add before extension
 - `--auto-suffix` - Automatically add size-based suffix
 
@@ -198,10 +198,10 @@ pulp ./images --format webp --out ./output --verbose
 pulp ./images --format webp --out ./output --overwrite
 
 # Delete original files after processing (safety: only if paths differ)
-pulp image.png --format webp --delete-original --out ./dist
+pulp image.png --format webp --delete-original --out ./pulp-image-results
 
 # Combined auto and custom suffix
-pulp image.png --width 800 --height 600 --auto-suffix --suffix "thumb" --out ./dist
+pulp image.png --width 800 --height 600 --auto-suffix --suffix "thumb" --out ./pulp-image-results
 # Output: image-800x600-thumb.png
 ```
 

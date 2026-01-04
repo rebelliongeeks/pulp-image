@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulp Image - Browser UI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="logo">🍊</div>
+        <div class="brand-text">
+          <h1>Pulp Image</h1>
+          <p class="brand-subtitle">by Rebellion Geeks <span class="version" id="version">v0.1.0</span></p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="process">Process Images</button>
+        <button class="tab-button" data-tab="help">Help & CLI Reference</button>
+      </div>
+
+      <!-- Process Tab -->
+      <div class="tab-content active" id="process-tab">
+        <form id="process-form" class="process-form">
+          <!-- Input Source -->
+          <div class="form-group">
+            <label class="form-label">
+              Input Source <span class="required">*</span>
+            </label>
+            
+            <!-- Input Mode Switch -->
+            <div class="input-mode-switch">
+              <label class="radio-label">
+                <input type="radio" name="input-mode" value="files" checked>
+                <span>Files</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="input-mode" value="folder">
+                <span>Folder</span>
+              </label>
+            </div>
+            
+            <!-- Files Input -->
+            <input type="file" id="input-source-files" class="file-input" multiple accept="image/png,image/jpeg,image/webp,image/avif" style="display: block;">
+            
+            <!-- Folder Input -->
+            <input type="file" id="input-source-folder" class="file-input" webkitdirectory directory multiple style="display: none;">
+            
+            <div class="input-helper" id="input-helper">
+              Select one or more image files. Supports PNG, JPG, WebP, AVIF. Multiple files will be processed as a batch.
+            </div>
+            
+            <!-- Folder mode privacy notice -->
+            <div id="folder-privacy-notice" class="privacy-notice" style="display: none;">
+              <div class="privacy-notice-content">
+                <strong>Privacy note:</strong> Files are processed locally on your computer. Browsers may show a security prompt when selecting folders. No files are uploaded to the internet.
+              </div>
+              <div class="privacy-notice-browser" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                Your browser may ask for permission to access this folder.
+              </div>
+            </div>
+            
+            <!-- File List Preview -->
+            <div id="input-preview" class="input-preview">
+              <div class="file-list-summary">
+                <span id="file-list-summary-text">No files selected</span>
+                <button type="button" id="toggle-file-list" class="toggle-file-list-btn" style="display: none;">Show files</button>
+              </div>
+              <div id="file-list-detail" class="file-list-detail" style="display: none;">
+                <!-- File list will be populated here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Directory -->
+          <div class="form-group">
+            <label for="output-dir" class="form-label">
+              Output Directory
+            </label>
+            <input type="text" id="output-dir" class="text-input" readonly>
+            <div class="input-helper" id="output-dir-helper">
+              Files will be saved in a new folder inside your home directory.
+            </div>
+            
+            <!-- Advanced Output Options -->
+            <details class="advanced-options">
+              <summary class="advanced-options-summary">Advanced output options</summary>
+              <div class="advanced-options-content">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="use-custom-output">
+                  <span class="checkbox-text">Use custom output directory</span>
+                </label>
+                <div class="input-helper">
+                  When enabled, you can specify a custom output directory. Use ~ for home directory.
+                </div>
+              </div>
+            </details>
+            
+            <div class="form-actions-inline" style="margin-top: 0.5rem;">
+              <button type="button" id="open-results-folder" class="button button-secondary" style="display: none;">
+                Open results folder
+              </button>
+            </div>
+          </div>
+
+          <!-- Format -->
+          <div class="form-group">
+            <label for="format" class="form-label">Output Format</label>
+            <select id="format" class="select-input">
+              <option value="">Keep original format</option>
+              <option value="png">PNG - Lossless, supports transparency</option>
+              <option value="jpg">JPG - Lossy, best for photos, no transparency</option>
+              <option value="webp">WebP - Modern format, good compression</option>
+              <option value="avif">AVIF - Best compression, modern browsers</option>
+            </select>
+            <div class="input-helper" id="format-helper">
+              Select output format or keep original.
+            </div>
+          </div>
+
+          <!-- Width & Height -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="width" class="form-label">Width (px)</label>
+              <input type="number" id="width" class="number-input" min="1" placeholder="Auto">
+              <div class="input-helper">Leave empty to preserve aspect ratio</div>
+            </div>
+            <div class="form-group">
+              <label for="height" class="form-label">Height (px)</label>
+              <input type="number" id="height" class="number-input" min="1" placeholder="Auto">
+              <div class="input-helper">Leave empty to preserve aspect ratio</div>
+            </div>
+          </div>
+
+          <!-- Quality -->
+          <div class="form-group">
+            <label for="quality" class="form-label">
+              Quality <span id="quality-value" class="value-display">80</span>
+            </label>
+            <input type="range" id="quality" class="slider-input" min="1" max="100" value="80">
+            <div class="input-helper" id="quality-helper">
+              Quality for lossy formats (1-100). Higher = better quality but larger file.
+            </div>
+          </div>
+
+          <!-- Lossless -->
+          <div class="form-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="lossless" class="toggle-input">
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Lossless Compression</span>
+            </label>
+            <div class="input-helper" id="lossless-helper">
+              Use lossless compression where supported (PNG, WebP, AVIF). PNG is always lossless.
+            </div>
+          </div>
+
+          <!-- Alpha Mode -->
+          <div class="form-group">
+            <label class="form-label">Alpha (Transparency) Handling</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="alpha-mode" value="flatten" checked>
+                <span>Flatten</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="alpha-mode" value="error">
+                <span>Error</span>
+              </label>
+            </div>
+            <div class="input-helper">
+              Flatten: Composite transparency onto background color. Error: Fail if transparency is present.
+            </div>
+          </div>
+
+          <!-- Background Color -->
+          <div class="form-group">
+            <label for="background" class="form-label">Background Color</label>
+            <div class="color-input-wrapper">
+              <input type="color" id="background" class="color-input" value="#ffffff">
+              <input type="text" id="background-text" class="color-text-input" value="#ffffff" readonly>
+            </div>
+            <div class="input-helper">
+              Background color for flattening transparency (used when converting to formats without transparency).
+            </div>
+          </div>
+
+          <!-- Rename Pattern -->
+          <div class="form-group">
+            <label for="rename-pattern" class="form-label">Rename Pattern (optional)</label>
+            <input type="text" id="rename-pattern" class="text-input" placeholder="e.g., {name}-optimized.{ext}">
+            <div class="input-helper">
+              Supported tokens: <code>{name}</code> (original basename), <code>{ext}</code> (output extension), <code>{index}</code> (1-based index). 
+              The rename pattern fully controls the output filename. <code>{name}</code> is optional and can be omitted.
+              <br><br>
+              <strong>Example:</strong> <code>{index}-cute-animal.{ext}</code><br>
+              → <code>1-cute-animal.webp</code>, <code>2-cute-animal.webp</code>, <code>3-cute-animal.webp</code>
+            </div>
+            <div id="rename-preview" class="preview-text"></div>
+          </div>
+
+          <!-- Suffix (Legacy - keep for backward compatibility but deprecate) -->
+          <div class="form-group" style="display: none;">
+            <label for="suffix" class="form-label">Custom Suffix</label>
+            <input type="text" id="suffix" class="text-input" placeholder="e.g., optimized">
+            <div class="input-helper">
+              Custom suffix to add before file extension. Example: "optimized" creates "image-optimized.png"
+            </div>
+            <div id="suffix-preview" class="preview-text"></div>
+          </div>
+
+          <!-- Auto Suffix -->
+          <div class="form-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="auto-suffix" class="toggle-input">
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Auto Suffix</span>
+            </label>
+            <div class="input-helper">
+              Automatically add size-based suffix: -800w (width), -600h (height), -800x600 (both).
+            </div>
+            <div id="auto-suffix-preview" class="preview-text"></div>
+          </div>
+
+          <!-- Overwrite -->
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="overwrite" class="checkbox-input">
+              <span class="checkbox-text">Overwrite Existing Files</span>
+            </label>
+            <div class="input-helper warning-text" id="overwrite-warning" style="display: none;">
+              ⚠️ Warning: This will overwrite existing output files.
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="form-actions">
+            <button type="submit" id="process-button" class="button button-primary">
+              Process Images
+            </button>
+            <button type="button" id="reset-button" class="button button-secondary">
+              Reset Form
+            </button>
+          </div>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-section" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 class="results-title" style="margin: 0;">Processing Results</h2>
+            <button type="button" id="open-results-folder-results" class="button button-secondary" style="display: none;">
+              Open results folder
+            </button>
+          </div>
+          <div id="results-content"></div>
+        </div>
+      </div>
+
+      <!-- Help Tab -->
+      <div class="tab-content" id="help-tab">
+        <div class="help-content">
+          <div class="help-info" style="background: var(--orange-bg-light); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 2rem;">
+            <h2 style="margin-top: 0;">Welcome to Pulp Image by Rebellion Geeks</h2>
+            <p><strong>You do NOT need the CLI to use Pulp Image.</strong> The browser UI you're using right now works fully offline and is the easiest way to process your images. The CLI (command line interface) is optional and only needed for advanced workflows.</p>
+          </div>
+
+          <div class="help-info">
+            <h3>Why use the CLI?</h3>
+            <p>The browser UI works fully offline and is easiest for most users. The CLI exists for advanced workflows such as:</p>
+            <ul>
+              <li><strong>Deleting original files after processing</strong> - Due to browser security rules, some filesystem actions (like deleting original files) are only possible when using the CLI.</li>
+              <li>Automation and scripts - Running Pulp Image from other programs or scripts</li>
+              <li>Power-user batch workflows - Processing thousands of images with custom automation</li>
+            </ul>
+            <p><em>If you're happy using this browser interface, you don't need to install the CLI at all!</em></p>
+          </div>
+
+          <div class="help-info">
+            <h3>Using the CLI (Advanced / Optional)</h3>
+            <p>If you want to use the command line interface, follow these steps:</p>
+            
+            <h4>Step 1: Install Node.js</h4>
+            <p>Pulp Image's CLI requires Node.js, which includes npm (Node Package Manager).</p>
+            <ul>
+              <li>Go to: <a href="https://nodejs.org" target="_blank" rel="noopener">https://nodejs.org</a></li>
+              <li>Download the LTS (Long Term Support) version</li>
+              <li>Install it like a normal app (double-click the installer and follow the prompts)</li>
+              <li>Restart your computer after installation</li>
+            </ul>
+
+            <h4>Step 2: Open a terminal</h4>
+            <p>You'll need to open a terminal (also called command prompt or command line) to run CLI commands:</p>
+            <ul>
+              <li><strong>macOS:</strong> Open Spotlight (press <kbd>Cmd + Space</kbd>), type "Terminal", then press Enter</li>
+              <li><strong>Windows:</strong> Press the Start button, type "Command Prompt" or "PowerShell", then open it</li>
+              <li><strong>Linux:</strong> Open your terminal application (usually found in your applications menu)</li>
+            </ul>
+
+            <h4>Step 3: Install Pulp Image CLI</h4>
+            <p>In the terminal, type this command and press Enter:</p>
+            <div class="example-block">
+              <code>npm install -g pulp-image</code>
+            </div>
+            <p>This installs Pulp Image globally (meaning it works from anywhere on your computer).</p>
+            <p><em>This may take a minute. If you see errors about permissions, consult npm's documentation or ask for help.</em></p>
+
+            <h4>Step 4: Verify installation</h4>
+            <p>Type this command to check if Pulp Image is installed correctly:</p>
+            <div class="example-block">
+              <code>pulp --help</code>
+            </div>
+            <p>You should see a list of available commands and options. If you see an error, the installation may not have completed successfully.</p>
+
+            <h4>Step 5: Run Pulp on your images</h4>
+            <p>Commands run in the folder where your images are located. Here's how to use it:</p>
+            <div class="example-block">
+              <code>cd Desktop/photos<br>pulp .</code>
+            </div>
+            <p>Explanation:</p>
+            <ul>
+              <li><code>cd</code> changes directory (folder) - replace "Desktop/photos" with the path to your images</li>
+              <li><code>.</code> means "current folder" - this processes all supported images in that folder</li>
+            </ul>
+            <p>You can also process a single file:</p>
+            <div class="example-block">
+              <code>pulp image.png --format webp</code>
+            </div>
+          </div>
+
+          <h2>CLI Reference</h2>
+          <p>This UI maps directly to CLI commands. Here's how each option translates:</p>
+          
+          <div class="help-mapping">
+            <h3>UI Option → CLI Flag</h3>
+            <table class="help-table">
+              <tr><td><strong>Input Source</strong></td><td><code>pulp [input]</code></td></tr>
+              <tr><td><strong>Output Directory</strong></td><td><code>--out &lt;dir&gt;</code></td></tr>
+              <tr><td><strong>Format</strong></td><td><code>--format &lt;format&gt;</code></td></tr>
+              <tr><td><strong>Width</strong></td><td><code>--width &lt;number&gt;</code></td></tr>
+              <tr><td><strong>Height</strong></td><td><code>--height &lt;number&gt;</code></td></tr>
+              <tr><td><strong>Quality</strong></td><td><code>--quality &lt;number&gt;</code></td></tr>
+              <tr><td><strong>Lossless</strong></td><td><code>--lossless</code></td></tr>
+              <tr><td><strong>Alpha Mode</strong></td><td><code>--alpha-mode &lt;mode&gt;</code></td></tr>
+              <tr><td><strong>Background Color</strong></td><td><code>--background &lt;color&gt;</code></td></tr>
+              <tr><td><strong>Rename Pattern</strong></td><td><code>--rename-pattern &lt;pattern&gt;</code> (UI only)</td></tr>
+              <tr><td><strong>Custom Suffix</strong></td><td><code>--suffix &lt;text&gt;</code></td></tr>
+              <tr><td><strong>Auto Suffix</strong></td><td><code>--auto-suffix</code></td></tr>
+              <tr><td><strong>Overwrite</strong></td><td><code>--overwrite</code></td></tr>
+              <tr><td><strong>Delete Original</strong></td><td><code>--delete-original</code> (CLI only)</td></tr>
+            </table>
+          </div>
+
+          <div class="help-examples">
+            <h3>CLI Examples</h3>
+            <div class="example-block">
+              <code>pulp image.png --format webp --quality 95</code>
+              <p>Convert PNG to WebP with high quality</p>
+            </div>
+            <div class="example-block">
+              <code>pulp image.png --width 800</code>
+              <p>Resize to 800px width (preserves aspect ratio)</p>
+            </div>
+            <div class="example-block">
+              <code>pulp image.png --format webp --out ./output</code>
+              <p>Convert and save to custom output directory</p>
+            </div>
+            <div class="example-block">
+              <code>pulp image.png --width 800 --height 600 --auto-suffix</code>
+              <p>Resize to exact dimensions with auto suffix</p>
+            </div>
+            <div class="example-block">
+              <code>pulp ./images --format webp --out ./output --verbose</code>
+              <p>Process entire directory with verbose output</p>
+            </div>
+            <div class="example-block">
+              <code>pulp image.png --format jpg --background "#ff0000"</code>
+              <p>Convert PNG with transparency to JPG with red background</p>
+            </div>
+            <div class="example-block">
+              <code>pulp image.png --format avif --quality 70</code>
+              <p>Convert to AVIF with custom quality</p>
+            </div>
+            <div class="example-block">
+              <code>pulp ./images --width 800 --auto-suffix --suffix "thumb" --out ./pulp-image-results</code>
+              <p>Process directory with resize, auto suffix, and custom suffix</p>
+            </div>
+          </div>
+
+          <div class="help-info">
+            <h3>When to Use CLI vs UI</h3>
+            <p><strong>Use CLI when:</strong></p>
+            <ul>
+              <li>Automating workflows or scripts</li>
+              <li>Processing large batches from command line</li>
+              <li>Integrating with other tools</li>
+              <li>You need to delete original files after processing (CLI only)</li>
+              <li>You're comfortable with command line</li>
+            </ul>
+            <p><strong>Use UI when:</strong></p>
+            <ul>
+              <li>You're new to the tool</li>
+              <li>You want visual feedback and guidance</li>
+              <li>You need to understand option combinations</li>
+              <li>You want to keep your original files safe (UI processes copies)</li>
+              <li>You prefer point-and-click interfaces</li>
+            </ul>
+          </div>
+
+          <div class="help-info">
+            <h3>Rename Patterns</h3>
+            <p>The UI supports rename patterns for flexible output filename generation. This is a UI helper feature that maps to output naming.</p>
+            <p>The rename pattern fully controls the output filename. <code>{name}</code> is optional and can be omitted.</p>
+            <p><strong>Supported tokens:</strong></p>
+            <ul>
+              <li><code>{name}</code> - Original basename (without extension)</li>
+              <li><code>{ext}</code> - Output extension (without leading dot)</li>
+              <li><code>{index}</code> - 1-based index in batch (useful for sequential naming)</li>
+            </ul>
+            <p><strong>Examples:</strong></p>
+            <ul>
+              <li><code>{name}-optimized.{ext}</code> - Adds "-optimized" suffix</li>
+              <li><code>{index}-{name}.{ext}</code> - Prefixes with sequential number</li>
+              <li><code>thumb-{name}.{ext}</code> - Prefixes all files with "thumb-"</li>
+              <li><code>{name}_web.{ext}</code> - Adds "_web" suffix</li>
+            </ul>
+            <p><strong>Full filename replacement example:</strong></p>
+            <p><code>{index}-cute-animal.{ext}</code><br>
+            → <code>1-cute-animal.webp</code>, <code>2-cute-animal.webp</code>, <code>3-cute-animal.webp</code></p>
+            <p><em>Note: If no extension is included in the pattern, the output extension will be automatically appended.</em></p>
+          </div>
+
+          <div class="help-info">
+            <h3>Compression Behavior</h3>
+            <ul>
+              <li><strong>PNG:</strong> Always lossless (no quality setting)</li>
+              <li><strong>JPG:</strong> Always lossy, default quality 80 (does not support lossless)</li>
+              <li><strong>WebP:</strong> Lossy by default (quality 80), use lossless for lossless</li>
+              <li><strong>AVIF:</strong> Lossy by default (quality 50), use lossless for lossless</li>
+            </ul>
+            <p><em>Note: Resize does not affect compression - it only changes dimensions.</em></p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

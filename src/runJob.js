@@ -34,7 +34,7 @@ export async function runJob(inputPath, config) {
   if (isFile) {
     // Single file processing
     try {
-      const result = await processImage(resolvedInputPath, config);
+      const result = await processImage(resolvedInputPath, config, 0);
       reporter.recordProcessed(result);
     } catch (error) {
       // Check if it's a skip (file exists or same path) or a real error
@@ -67,9 +67,10 @@ export async function runJob(inputPath, config) {
     }
     
     // Process each file
-    for (const filePath of tasks) {
+    for (let i = 0; i < tasks.length; i++) {
+      const filePath = tasks[i];
       try {
-        const result = await processImage(filePath, config);
+        const result = await processImage(filePath, config, i);
         reporter.recordProcessed(result);
       } catch (error) {
         // Check if it's a skip (file exists or same path) or a real error

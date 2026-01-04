@@ -96,7 +96,7 @@ pulp [input] [options]
 - `-f, --format <format>` - Output format: `png`, `jpg`, `webp`, or `avif`
 
 #### Output
-- `-o, --out <dir>` - Output directory (default: `./dist`)
+- `-o, --out <dir>` - Output directory (default: `./pulp-image-results`)
   - **Why use --out?** This keeps your original files safe and organizes processed images in a dedicated folder. The output directory is created automatically if it doesn't exist.
 
 #### Quality
@@ -191,13 +191,13 @@ pulp ./images --format webp --out ./output --overwrite
 
 ```bash
 # Safe processing (output to separate directory)
-pulp image.png --format webp --out ./dist
+pulp image.png --format webp --out ./pulp-image-results
 
 # Overwrite existing output files
-pulp image.png --format webp --out ./dist --overwrite
+pulp image.png --format webp --out ./pulp-image-results --overwrite
 
 # Delete original after successful processing
-pulp image.png --format webp --out ./dist --delete-original
+pulp image.png --format webp --out ./pulp-image-results --delete-original
 ```
 
 ## Safety Features
@@ -217,7 +217,7 @@ The `--out` option specifies where processed images are saved. Here's why it's u
 - **Keeps originals safe** - Your source files remain untouched
 - **Organizes outputs** - All processed images in one place
 - **Prevents accidents** - No risk of overwriting originals
-- **Default location** - Uses `./dist` if not specified
+- **Default location** - Uses `./pulp-image-results` if not specified
 - **Auto-creation** - Creates the directory if it doesn't exist
 
 Example:
