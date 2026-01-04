@@ -7,6 +7,7 @@ import { formatBytes } from '../src/stats.js';
 import { planTasks } from '../src/planTasks.js';
 import { Reporter } from '../src/reporter.js';
 import { runJob } from '../src/runJob.js';
+import { startUIServer } from '../src/uiServer.js';
 import { statSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
@@ -200,6 +201,40 @@ For more examples and interactive documentation, see docs/index.html
       results.skipped.forEach(s => reporter.recordSkipped(s.filePath, s.reason));
       results.failed.forEach(f => reporter.recordFailed(f.filePath, new Error(f.error)));
       reporter.printSummary(config.verbose);
+    }
+  });
+
+// UI command
+program
+  .command('ui')
+  .description('Start the browser-based UI')
+  .option('-p, --port <number>', 'Port to run server on', '3000')
+  .action(async (options) => {
+    const port = parseInt(options.port || '3000', 10);
+    
+    if (isNaN(port) || port < 1 || port > 65535) {
+      console.error(chalk.red(`\nError: Invalid port number: ${options.port}`));
+      process.exit(1);
+    }
+    
+    try {
+      const { server } = await startUIServer(port);
+      
+      // Handle graceful shutdown
+      const shutdown = () => {
+        console.log(chalk.gray('\n\nShutting down server...'));
+        server.close(() => {
+          console.log(chalk.green('Server stopped.'));
+          process.exit(0);
+        });
+      };
+      
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+      
+    } catch (error) {
+      console.error(chalk.red(`\nError starting UI server: ${error.message}`));
+      process.exit(1);
     }
   });
 
