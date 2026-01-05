@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const pkg = JSON.parse(
+  readFileSync(resolve(__dirname, '../package.json'), 'utf-8')
+);
+
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { banner } from '../src/banner.js';
@@ -9,14 +20,13 @@ import { Reporter } from '../src/reporter.js';
 import { runJob } from '../src/runJob.js';
 import { startUIServer } from '../src/uiServer.js';
 import { statSync, existsSync } from 'fs';
-import { resolve } from 'path';
 
 const program = new Command();
 
 program
   .name('pulp')
   .description('A CLI tool for processing images with resize, format conversion, and optimization')
-  .version('0.1.0')
+  .version(pkg.version)  
   .addHelpText('before', chalk.cyan(banner))
   .argument('[input]', 'Input file or directory')
   .option('-w, --width <number>', 'Output width in pixels')
@@ -57,7 +67,6 @@ Compression Behavior:
   AVIF: Lossy by default (quality 50), use --lossless for lossless
   Note: Resize does not affect compression - it only changes dimensions.
 
-For more examples and interactive documentation, see docs/index.html
   `)
   .action(async (input, options) => {
     // Display banner
