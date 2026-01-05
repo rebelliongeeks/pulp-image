@@ -286,13 +286,20 @@ export async function startUIServer(port = 3000) {
       } catch (execError) {
         // Don't expose raw OS errors to user
         console.error('Error opening folder:', execError);
-        res.status(500).json({ error: 'Could not open folder automatically.' });
+        res.status(500).json({ 
+          error: 'Could not open folder automatically.',
+          path: path // Include path so UI can display it
+        });
       }
       
     } catch (error) {
       // Don't expose raw errors to user
       console.error('Error opening folder:', error);
-      res.status(500).json({ error: 'Could not open folder automatically.' });
+      const { path } = req.body;
+      res.status(500).json({ 
+        error: 'Could not open folder automatically.',
+        path: path || null // Include path if available
+      });
     }
   });
   

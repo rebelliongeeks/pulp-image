@@ -199,6 +199,35 @@ body {
   white-space: pre-line;
 }
 
+.folder-open-fallback {
+  padding: 0.75rem;
+  background: var(--orange-bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-top: 0.5rem;
+}
+
+.folder-open-fallback-message {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-line;
+  margin-bottom: 0.5rem;
+}
+
+.folder-open-fallback-path {
+  font-size: 0.85rem;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  color: var(--orange-primary);
+  background: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  word-break: break-all;
+  user-select: all;
+  cursor: text;
+}
+
 .warning-text {
   color: var(--warning);
   font-weight: 500;

@@ -56,6 +56,8 @@ const inputHelper = document.getElementById('input-helper');
 const outputDirHelper = document.getElementById('output-dir-helper');
 const openResultsFolderHelper = document.getElementById('open-results-folder-helper');
 const openResultsFolderResultsHelper = document.getElementById('open-results-folder-results-helper');
+const openResultsFolderFallback = document.getElementById('open-results-folder-fallback');
+const openResultsFolderResultsFallback = document.getElementById('open-results-folder-results-fallback');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -211,7 +213,7 @@ function setupForm() {
       }
       const outputPath = outputDir ? outputDir.value : null;
       if (outputPath) {
-        await openResultsFolder(outputPath);
+        await openResultsFolder(outputPath, 'output');
       }
     });
   } else {
@@ -229,7 +231,7 @@ function setupForm() {
       }
       const outputPath = outputDir ? outputDir.value : null;
       if (outputPath) {
-        await openResultsFolder(outputPath);
+        await openResultsFolder(outputPath, 'results');
       }
     });
   } else {
@@ -237,21 +239,55 @@ function setupForm() {
   }
   
   // Helper function to open results folder
-  async function openResultsFolder(path) {
+  async function openResultsFolder(path, buttonLocation = 'output') {
+    // Hide any previous fallback messages
+    if (openResultsFolderFallback) {
+      openResultsFolderFallback.style.display = 'none';
+    }
+    if (openResultsFolderResultsFallback) {
+      openResultsFolderResultsFallback.style.display = 'none';
+    }
+    
     try {
       const response = await fetch('/api/open-folder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: path })
       });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Could not open folder automatically.');
+        // Show friendly fallback message with path
+        const fallbackElement = buttonLocation === 'results' ? openResultsFolderResultsFallback : openResultsFolderFallback;
+        const messageElement = fallbackElement?.querySelector('.folder-open-fallback-message');
+        const pathElement = fallbackElement?.querySelector('.folder-open-fallback-path');
+        
+        if (fallbackElement && messageElement && pathElement) {
+          messageElement.textContent = 'We couldn\'t open the results folder automatically on this system.\nYou can open it manually using the path below.';
+          pathElement.textContent = errorData.path || path || 'Path not available';
+          fallbackElement.style.display = 'block';
+        }
+        return; // Don't throw - this is expected behavior
+      }
+      
+      // Success - ensure fallback is hidden
+      if (openResultsFolderFallback) {
+        openResultsFolderFallback.style.display = 'none';
+      }
+      if (openResultsFolderResultsFallback) {
+        openResultsFolderResultsFallback.style.display = 'none';
       }
     } catch (error) {
-      // Show user-friendly error message
-      const errorMsg = error.message || 'Could not open folder automatically.';
-      alert(errorMsg);
+      // Network or other errors - show fallback with path
+      const fallbackElement = buttonLocation === 'results' ? openResultsFolderResultsFallback : openResultsFolderFallback;
+      const messageElement = fallbackElement?.querySelector('.folder-open-fallback-message');
+      const pathElement = fallbackElement?.querySelector('.folder-open-fallback-path');
+      
+      if (fallbackElement && messageElement && pathElement) {
+        messageElement.textContent = 'We couldn\'t open the results folder automatically on this system.\nYou can open it manually using the path below.';
+        pathElement.textContent = path || 'Path not available';
+        fallbackElement.style.display = 'block';
+      }
     }
   }
   
@@ -782,6 +818,14 @@ async function handleSubmit(e) {
     
     displayResults(results);
     
+    // Hide any fallback messages from previous attempts
+    if (openResultsFolderFallback) {
+      openResultsFolderFallback.style.display = 'none';
+    }
+    if (openResultsFolderResultsFallback) {
+      openResultsFolderResultsFallback.style.display = 'none';
+    }
+    
     // Enable/disable "Open results folder" buttons based on whether any files were processed
     const hasProcessedFiles = results.processed && results.processed.length > 0;
     const explanationText = 'No output files were created.\nFix the errors above and process again to enable this action.';
@@ -1090,12 +1134,18 @@ function resetForm() {
   if (openResultsFolderHelper) {
     openResultsFolderHelper.style.display = 'none';
   }
+  if (openResultsFolderFallback) {
+    openResultsFolderFallback.style.display = 'none';
+  }
   if (openResultsFolderResultsBtn) {
     openResultsFolderResultsBtn.style.display = 'none';
     openResultsFolderResultsBtn.disabled = true;
   }
   if (openResultsFolderResultsHelper) {
     openResultsFolderResultsHelper.style.display = 'none';
+  }
+  if (openResultsFolderResultsFallback) {
+    openResultsFolderResultsFallback.style.display = 'none';
   }
   updateUI().catch(console.error);
   resultsSection.style.display = 'none';
