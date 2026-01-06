@@ -24,7 +24,7 @@ Install pulp-image globally using npm:
 npm install -g pulp-image
 ```
 
-This will make the `pulp` command available globally on your system.
+This is a global CLI. Installing with `-g` makes the `pulp` command available system-wide.
 
 ### Requirements
 

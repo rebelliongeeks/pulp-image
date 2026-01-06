@@ -13,7 +13,7 @@ const pkg = JSON.parse(
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { banner } from '../src/banner.js';
+import { getBanner } from '../src/banner.js';
 import { formatBytes } from '../src/stats.js';
 import { planTasks } from '../src/planTasks.js';
 import { Reporter } from '../src/reporter.js';
@@ -22,6 +22,7 @@ import { startUIServer } from '../src/uiServer.js';
 import { statSync, existsSync } from 'fs';
 
 const program = new Command();
+const banner = getBanner(pkg.version);
 
 program
   .name('pulp')

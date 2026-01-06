@@ -1,7 +1,7 @@
-export const banner = `
+export const getBanner = (version) => `
 ╔════════════════════════════════════════╗
 ║                                        ║
-║         pulp-image v0.1.0              ║
+║        🍊 pulp-image v${version}              ║
 ║                                        ║
 ║     Image processing made simple       ║
 ║                                        ║
