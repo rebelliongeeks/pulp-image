@@ -5,7 +5,7 @@
   "type": "module",
   "main": "bin/pulp.js",
   "bin": {
-    "pulp": "./bin/pulp.js"
+    "pulp": "bin/pulp.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,7 +22,7 @@
   "homepage": "https://github.com/rebelliongeeks/pulp-image",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rebelliongeeks/pulp-image.git"
+    "url": "git+https://github.com/rebelliongeeks/pulp-image.git"
   },
   "engines": {
     "node": ">=18.0.0"
