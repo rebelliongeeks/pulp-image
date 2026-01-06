@@ -18,45 +18,13 @@ A powerful, safety-first CLI tool for processing images with resize, format conv
 
 ## Installation
 
-### From GitHub
-
-1. **Clone or download the repository:**
-   ```bash
-   git clone https://github.com/rebelliongeeks/pulp-image.git
-   cd pulp-image
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Link the CLI globally:**
-   ```bash
-   npm link
-   ```
-
-   This will make the `pulp` command available globally on your system.
-
-### Alternative: Install directly from GitHub
-
-You can also install directly from GitHub without cloning:
+Install pulp-image globally using npm:
 
 ```bash
-npm install -g github:rebelliongeeks/pulp-image
+npm install -g pulp-image
 ```
 
-### Global Installation (Persistent)
-
-If you want the `pulp` command to work even after deleting the project folder, use global installation instead of `npm link`:
-
-```bash
-npm install -g .
-```
-
-This copies the files to your global npm directory, so the command persists even if you delete the source folder.
-
-**Note:** `npm link` creates a symlink (breaks if you delete the folder). `npm install -g` copies files (persists after deletion).
+This will make the `pulp` command available globally on your system.
 
 ### Requirements
 
@@ -316,12 +284,21 @@ Example output:
   Total saved:         9.26 MB (92.03%)
 ```
 
-## Interactive Documentation
+## Browser UI
 
-For a beautiful interactive documentation with examples, open:
+pulp-image includes a web-based interface for easy image processing:
+
+```bash
+pulp ui
 ```
-docs/index.html
+
+This starts a local web server. Open your browser and navigate to:
+
 ```
+http://localhost:3000
+```
+
+The browser UI provides a user-friendly interface for processing images with all the same features available in the CLI.
 
 ## License
 
