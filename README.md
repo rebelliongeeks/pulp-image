@@ -2,7 +2,6 @@
 
 A powerful, safety-first CLI tool for processing images with resize, format conversion, and optimization.
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 

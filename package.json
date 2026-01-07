@@ -19,7 +19,7 @@
   ],
   "author": "Rebellion Geeks",
   "license": "MIT",
-  "homepage": "https://github.com/rebelliongeeks/pulp-image",
+  "homepage": "https://pulp.run",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rebelliongeeks/pulp-image.git"
