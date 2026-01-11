@@ -88,7 +88,7 @@
             <label for="output-dir" class="form-label">
               Output Directory
             </label>
-            <input type="text" id="output-dir" class="text-input" readonly>
+            <input type="text" id="output-dir" class="text-input" readonly placeholder="~/my-images or full path">
             <div class="input-helper" id="output-dir-helper">
               Files will be saved in a new folder inside your home directory.
             </div>
@@ -102,7 +102,7 @@
                   <span class="checkbox-text">Use custom output directory</span>
                 </label>
                 <div class="input-helper">
-                  When enabled, you can specify a custom output directory. Use ~ for home directory.
+                  When enabled, you can specify a custom output directory. Use <code>~</code> as a shortcut for your home folder (e.g., <code>~/my-images</code>), or enter a full path.
                 </div>
               </div>
             </details>
@@ -284,188 +284,581 @@
       <!-- Help Tab -->
       <div class="tab-content" id="help-tab">
         <div class="help-content">
-          <div class="help-info" style="background: var(--orange-bg-light); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 2rem;">
-            <h2 style="margin-top: 0;">Welcome to Pulp Image by Rebellion Geeks</h2>
-            <p><strong>You do NOT need the CLI to use Pulp Image.</strong> The browser UI you're using right now works fully offline and is the easiest way to process your images. The CLI (command line interface) is optional and only needed for advanced workflows.</p>
+          <!-- Sub-Navigation -->
+          <nav class="help-subnav" id="help-subnav">
+            <a class="help-subnav-link" href="#help-compression">Formats / Compression</a>
+            <a class="help-subnav-link" href="#help-ui-options">UI Guide</a>
+            <a class="help-subnav-link" href="#help-install">Install CLI</a>
+            <a class="help-subnav-link" href="#help-reference">CLI Options</a>
+            <a class="help-subnav-link" href="#help-examples">Examples</a>
+          </nav>
+
+          <!-- Welcome -->
+          <div class="help-card" style="background: var(--orange-bg-light); margin-bottom: 1.5rem;">
+            <h4 class="help-card-title" style="font-size: 1.1rem; color: var(--orange-text);">Welcome to Pulp Image</h4>
+            <p class="help-card-text">This browser UI works fully offline. The CLI is optional for automation, advanced workflows, or if you prefer the terminal.</p>
+            <p class="help-card-text" style="margin-top: 0.5rem;">If you downloaded this UI as a portable package from the Pulp website, you don't need to install the CLI — it's already included. If you want to use the CLI separately, see the <a href="#help-install" style="color: var(--orange-text); font-weight: 600;">installation guide</a>.</p>
           </div>
 
-          <div class="help-info">
-            <h3>Why use the CLI?</h3>
-            <p>The browser UI works fully offline and is easiest for most users. The CLI exists for advanced workflows such as:</p>
-            <ul>
-              <li><strong>Deleting original files after processing</strong> - Due to browser security rules, some filesystem actions (like deleting original files) are only possible when using the CLI.</li>
-              <li>Automation and scripts - Running Pulp Image from other programs or scripts</li>
-              <li>Power-user batch workflows - Processing thousands of images with custom automation</li>
-            </ul>
-            <p><em>If you're happy using this browser interface, you don't need to install the CLI at all!</em></p>
-          </div>
+          <!-- Compression Behavior -->
 
-          <div class="help-info">
-            <h3>Using the CLI (Advanced / Optional)</h3>
-            <p>If you want to use the command line interface, follow these steps:</p>
-            
-            <h4>Step 1: Install Node.js</h4>
-            <p>Pulp Image's CLI requires Node.js, which includes npm (Node Package Manager).</p>
-            <ul>
-              <li>Go to: <a href="https://nodejs.org" target="_blank" rel="noopener">https://nodejs.org</a></li>
-              <li>Download the LTS (Long Term Support) version</li>
-              <li>Install it like a normal app (double-click the installer and follow the prompts)</li>
-              <li>Restart your computer after installation</li>
-            </ul>
-
-            <h4>Step 2: Open a terminal</h4>
-            <p>You'll need to open a terminal (also called command prompt or command line) to run CLI commands:</p>
-            <ul>
-              <li><strong>macOS:</strong> Open Spotlight (press <kbd>Cmd + Space</kbd>), type "Terminal", then press Enter</li>
-              <li><strong>Windows:</strong> Press the Start button, type "Command Prompt" or "PowerShell", then open it</li>
-              <li><strong>Linux:</strong> Open your terminal application (usually found in your applications menu)</li>
-            </ul>
-
-            <h4>Step 3: Install Pulp Image CLI</h4>
-            <p>In the terminal, type this command and press Enter:</p>
-            <div class="example-block">
-              <code>npm install -g pulp-image</code>
-            </div>
-            <p>This installs Pulp Image globally (meaning it works from anywhere on your computer).</p>
-            <p><em>This may take a minute. If you see errors about permissions, consult npm's documentation or ask for help.</em></p>
-
-            <h4>Step 4: Verify installation</h4>
-            <p>Type this command to check if Pulp Image is installed correctly:</p>
-            <div class="example-block">
-              <code>pulp --help</code>
-            </div>
-            <p>You should see a list of available commands and options. If you see an error, the installation may not have completed successfully.</p>
-
-            <h4>Step 5: Run Pulp on your images</h4>
-            <p>Commands run in the folder where your images are located. Here's how to use it:</p>
-            <div class="example-block">
-              <code>cd Desktop/photos<br>pulp .</code>
-            </div>
-            <p>Explanation:</p>
-            <ul>
-              <li><code>cd</code> changes directory (folder) - replace "Desktop/photos" with the path to your images</li>
-              <li><code>.</code> means "current folder" - this processes all supported images in that folder</li>
-            </ul>
-            <p>You can also process a single file:</p>
-            <div class="example-block">
-              <code>pulp image.png --format webp</code>
-            </div>
-          </div>
-
-          <h2>CLI Reference</h2>
-          <p>This UI maps directly to CLI commands. Here's how each option translates:</p>
-          
-          <div class="help-mapping">
-            <h3>UI Option → CLI Flag</h3>
+          <section id="help-compression">
+            <h2>Formats / Compression</h2>
             <table class="help-table">
-              <tr><td><strong>Input Source</strong></td><td><code>pulp [input]</code></td></tr>
-              <tr><td><strong>Output Directory</strong></td><td><code>--out &lt;dir&gt;</code></td></tr>
-              <tr><td><strong>Format</strong></td><td><code>--format &lt;format&gt;</code></td></tr>
-              <tr><td><strong>Width</strong></td><td><code>--width &lt;number&gt;</code></td></tr>
-              <tr><td><strong>Height</strong></td><td><code>--height &lt;number&gt;</code></td></tr>
-              <tr><td><strong>Quality</strong></td><td><code>--quality &lt;number&gt;</code></td></tr>
-              <tr><td><strong>Lossless</strong></td><td><code>--lossless</code></td></tr>
-              <tr><td><strong>Alpha Mode</strong></td><td><code>--alpha-mode &lt;mode&gt;</code></td></tr>
-              <tr><td><strong>Background Color</strong></td><td><code>--background &lt;color&gt;</code></td></tr>
-              <tr><td><strong>Rename Pattern</strong></td><td><code>--rename-pattern &lt;pattern&gt;</code> (UI only)</td></tr>
-              <tr><td><strong>Custom Suffix</strong></td><td><code>--suffix &lt;text&gt;</code></td></tr>
-              <tr><td><strong>Auto Suffix</strong></td><td><code>--auto-suffix</code></td></tr>
-              <tr><td><strong>Overwrite</strong></td><td><code>--overwrite</code></td></tr>
-              <tr><td><strong>Delete Original</strong></td><td><code>--delete-original</code> (CLI only)</td></tr>
+              <thead><tr><th>Format</th><th>Transparency</th><th>Compression</th><th>Default Quality</th></tr></thead>
+              <tbody>
+                <tr><td><code>png</code></td><td>✓ Yes</td><td>Always lossless</td><td>—</td></tr>
+                <tr><td><code>jpg</code></td><td>✗ No</td><td>Always lossy</td><td>80</td></tr>
+                <tr><td><code>webp</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>80</td></tr>
+                <tr><td><code>avif</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>50</td></tr>
+              </tbody>
             </table>
-          </div>
+            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;"><em>Note: Resize does not affect compression — it only changes dimensions.</em></p>
+          </section>
 
-          <div class="help-examples">
-            <h3>CLI Examples</h3>
-            <div class="example-block">
-              <code>pulp image.png --format webp --quality 95</code>
-              <p>Convert PNG to WebP with high quality</p>
+          <!-- UI Options Guide -->
+          <section id="help-ui-options">
+            <h2>UI Options Guide</h2>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Selecting Images</h3>
+              <p style="margin-bottom: 0.75rem;">Choose between <strong>Files</strong> (individual images) or <strong>Folder</strong> (all images in a directory). Supports drag-and-drop.</p>
             </div>
-            <div class="example-block">
-              <code>pulp image.png --width 800</code>
-              <p>Resize to 800px width (preserves aspect ratio)</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Output Directory</h3>
+              <p style="margin-bottom: 0.5rem;">Default: <code>~/pulp-image-results/[timestamp]/</code></p>
+              <p style="margin-bottom: 0.75rem;">Enable "Use custom output directory" to specify your own path. Use <code>~</code> for home directory.</p>
             </div>
-            <div class="example-block">
-              <code>pulp image.png --format webp --out ./output</code>
-              <p>Convert and save to custom output directory</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Dimensions (Width & Height)</h3>
+              <table class="help-table">
+                <thead><tr><th>Setting</th><th>Result</th></tr></thead>
+                <tbody>
+                  <tr><td>Width only</td><td>Height adjusts to preserve aspect ratio</td></tr>
+                  <tr><td>Height only</td><td>Width adjusts to preserve aspect ratio</td></tr>
+                  <tr><td>Both</td><td>Exact dimensions (may crop)</td></tr>
+                  <tr><td>Neither</td><td>Original size (format/quality only)</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="example-block">
-              <code>pulp image.png --width 800 --height 600 --auto-suffix</code>
-              <p>Resize to exact dimensions with auto suffix</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Quality Slider</h3>
+              <p style="margin-bottom: 0.5rem;">Controls compression for JPG, WebP, AVIF (1-100). Disabled for PNG and when lossless is enabled.</p>
+              <table class="help-table">
+                <thead><tr><th>Range</th><th>Use Case</th></tr></thead>
+                <tbody>
+                  <tr><td>90-100</td><td>Near-lossless, important photos</td></tr>
+                  <tr><td>75-89</td><td>Good balance (recommended)</td></tr>
+                  <tr><td>50-74</td><td>Thumbnails, previews</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="example-block">
-              <code>pulp ./images --format webp --out ./output --verbose</code>
-              <p>Process entire directory with verbose output</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Alpha (Transparency)</h3>
+              <p style="margin-bottom: 0.5rem;">When converting to JPG (no transparency):</p>
+              <ul style="margin: 0 0 0 1.25rem; color: var(--text-secondary);">
+                <li><strong>Flatten</strong> — Fill transparent areas with background color</li>
+                <li><strong>Error</strong> — Fail if image has transparency</li>
+              </ul>
             </div>
-            <div class="example-block">
-              <code>pulp image.png --format jpg --background "#ff0000"</code>
-              <p>Convert PNG with transparency to JPG with red background</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Auto Suffix</h3>
+              <p style="margin-bottom: 0.5rem;">Adds dimensions to filename:</p>
+              <ul style="margin: 0 0 0 1.25rem; color: var(--text-secondary);">
+                <li>Width 800 → <code>photo-800w.webp</code></li>
+                <li>Height 600 → <code>photo-600h.webp</code></li>
+                <li>Both → <code>photo-800x600.webp</code></li>
+              </ul>
             </div>
-            <div class="example-block">
-              <code>pulp image.png --format avif --quality 70</code>
-              <p>Convert to AVIF with custom quality</p>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Rename Patterns (UI Only)</h3>
+              <p style="margin-bottom: 0.5rem;">Flexible output filename generation. <em>CLI users already have shell tools for renaming that can be piped with Pulp.</em></p>
+              <p style="margin-bottom: 0.5rem;"><strong>Supported Tokens:</strong></p>
+              <ul style="margin: 0 0 1rem 1.25rem; color: var(--text-secondary);">
+                <li><code>{name}</code> — Original basename (without extension)</li>
+                <li><code>{ext}</code> — Output extension (without leading dot)</li>
+                <li><code>{index}</code> — 1-based index in batch</li>
+              </ul>
+              <table class="help-table">
+                <thead><tr><th>Pattern</th><th>Result</th></tr></thead>
+                <tbody>
+                  <tr><td><code>{name}-optimized.{ext}</code></td><td>photo-optimized.webp</td></tr>
+                  <tr><td><code>{index}-{name}.{ext}</code></td><td>1-photo.webp, 2-cat.webp</td></tr>
+                  <tr><td><code>thumb-{name}.{ext}</code></td><td>thumb-photo.webp</td></tr>
+                  <tr><td><code>image-{index}.{ext}</code></td><td>image-1.webp, image-2.webp</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="example-block">
-              <code>pulp ./images --width 800 --auto-suffix --suffix "thumb" --out ./pulp-image-results</code>
-              <p>Process directory with resize, auto suffix, and custom suffix</p>
-            </div>
-          </div>
+          </section>
 
-          <div class="help-info">
-            <h3>When to Use CLI vs UI</h3>
-            <p><strong>Use CLI when:</strong></p>
-            <ul>
-              <li>Automating workflows or scripts</li>
-              <li>Processing large batches from command line</li>
-              <li>Integrating with other tools</li>
-              <li>You need to delete original files after processing (CLI only)</li>
-              <li>You're comfortable with command line</li>
-            </ul>
-            <p><strong>Use UI when:</strong></p>
-            <ul>
-              <li>You're new to the tool</li>
-              <li>You want visual feedback and guidance</li>
-              <li>You need to understand option combinations</li>
-              <li>You want to keep your original files safe (UI processes copies)</li>
-              <li>You prefer point-and-click interfaces</li>
-            </ul>
-          </div>
+          <!-- Tips -->
+          <section id="help-tips">
+            <h2>Tips & Best Practices</h2>
+            
+            <div class="help-card">
+              <h4 class="help-card-title">🖼️ Web Images</h4>
+              <div class="help-card-text">WebP at quality 80-85. Great compression, modern browser support.</div>
+            </div>
+            
+            <div class="help-card">
+              <h4 class="help-card-title">📱 Responsive Images</h4>
+              <div class="help-card-text">Process same images with different widths (400, 800, 1200) + Auto Suffix.</div>
+            </div>
+            
+            <div class="help-card">
+              <h4 class="help-card-title">🎨 Graphics & Logos</h4>
+              <div class="help-card-text">PNG or WebP lossless to preserve sharp edges and text.</div>
+            </div>
+            
+            <div class="help-card">
+              <h4 class="help-card-title">📷 Photos</h4>
+              <div class="help-card-text">JPG 85-90 or WebP 80-85 for best size/quality balance.</div>
+            </div>
+          </section>
 
-          <div class="help-info">
-            <h3>Rename Patterns</h3>
-            <p>The UI supports rename patterns for flexible output filename generation. This is a UI helper feature that maps to output naming.</p>
-            <p>The rename pattern fully controls the output filename. <code>{name}</code> is optional and can be omitted.</p>
-            <p><strong>Supported tokens:</strong></p>
-            <ul>
-              <li><code>{name}</code> - Original basename (without extension)</li>
-              <li><code>{ext}</code> - Output extension (without leading dot)</li>
-              <li><code>{index}</code> - 1-based index in batch (useful for sequential naming)</li>
-            </ul>
-            <p><strong>Examples:</strong></p>
-            <ul>
-              <li><code>{name}-optimized.{ext}</code> - Adds "-optimized" suffix</li>
-              <li><code>{index}-{name}.{ext}</code> - Prefixes with sequential number</li>
-              <li><code>thumb-{name}.{ext}</code> - Prefixes all files with "thumb-"</li>
-              <li><code>{name}_web.{ext}</code> - Adds "_web" suffix</li>
-            </ul>
-            <p><strong>Full filename replacement example:</strong></p>
-            <p><code>{index}-cute-animal.{ext}</code><br>
-            → <code>1-cute-animal.webp</code>, <code>2-cute-animal.webp</code>, <code>3-cute-animal.webp</code></p>
-            <p><em>Note: If no extension is included in the pattern, the output extension will be automatically appended.</em></p>
-          </div>
+          <section id="help-install">
+            <h2>Installing the CLI (Optional)</h2>
+            <p>The CLI is optional. Only install if you need automation, scripting, or CLI-only features like <code>--delete-original</code>.</p>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Install globally via npm (requires Node.js 18+)</span>
+              </div>
+              <div class="terminal-example-body" data-copy="npm install -g pulp-image">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> npm install -g pulp-image</pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Verify installation</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp --version">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp --version</pre>
+              </div>
+            </div>
+            
+            <div class="help-card">
+              <h4 class="help-card-title">Don't have Node.js?</h4>
+              <div class="help-card-text">
+                Download from <a href="https://nodejs.org" target="_blank" rel="noopener" style="color: var(--orange-text);">nodejs.org</a> (LTS version). After installing, open a terminal:
+                <ul style="margin: 0.5rem 0 0 1.25rem;">
+                  <li><strong>macOS:</strong> Press <kbd>Cmd + Space</kbd>, type "Terminal"</li>
+                  <li><strong>Windows:</strong> Search "PowerShell" or "Command Prompt"</li>
+                  <li><strong>Linux:</strong> Open your terminal application</li>
+                </ul>
+              </div>
+            </div>
+          </section>
 
-          <div class="help-info">
-            <h3>Compression Behavior</h3>
-            <ul>
-              <li><strong>PNG:</strong> Always lossless (no quality setting)</li>
-              <li><strong>JPG:</strong> Always lossy, default quality 80 (does not support lossless)</li>
-              <li><strong>WebP:</strong> Lossy by default (quality 80), use lossless for lossless</li>
-              <li><strong>AVIF:</strong> Lossy by default (quality 50), use lossless for lossless</li>
-            </ul>
-            <p><em>Note: Resize does not affect compression - it only changes dimensions.</em></p>
-          </div>
+          <section id="help-reference">
+            <h2>CLI Options</h2>
+            <p>Complete reference for all CLI options:</p>
+            
+            <table class="help-table">
+              <thead><tr><th>Option</th><th>Description</th><th>Default</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>-w, --width &lt;number&gt;</code></td>
+                  <td>Output width in pixels. Aspect ratio is preserved if height is not specified.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>-h, --height &lt;number&gt;</code></td>
+                  <td>Output height in pixels. Aspect ratio is preserved if width is not specified.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>-f, --format &lt;format&gt;</code></td>
+                  <td>Output format: <code>png</code>, <code>jpg</code>, <code>webp</code>, or <code>avif</code></td>
+                  <td>Same as input</td>
+                </tr>
+                <tr>
+                  <td><code>-o, --out &lt;dir&gt;</code></td>
+                  <td>Output directory. Created automatically if it doesn't exist.</td>
+                  <td><code>./pulp-image-results</code></td>
+                </tr>
+                <tr>
+                  <td><code>--quality &lt;number&gt;</code></td>
+                  <td>Quality for lossy formats (1-100). Higher = better quality, larger file.</td>
+                  <td>JPG: 80, WebP: 80, AVIF: 50</td>
+                </tr>
+                <tr>
+                  <td><code>--lossless</code></td>
+                  <td>Use lossless compression for WebP and AVIF. PNG is always lossless.</td>
+                  <td>Off (lossy)</td>
+                </tr>
+                <tr>
+                  <td><code>--suffix &lt;text&gt;</code></td>
+                  <td>Custom suffix added before file extension. E.g., "optimized" → image-optimized.png</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>--auto-suffix</code></td>
+                  <td>Automatically add size-based suffix: <code>-800w</code>, <code>-600h</code>, or <code>-800x600</code></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>--background &lt;color&gt;</code></td>
+                  <td>Background color (hex) for transparency flattening when converting to JPG.</td>
+                  <td><code>#ffffff</code></td>
+                </tr>
+                <tr>
+                  <td><code>--alpha-mode &lt;mode&gt;</code></td>
+                  <td>How to handle transparency: <code>flatten</code> (composite onto background) or <code>error</code> (fail if present)</td>
+                  <td><code>flatten</code></td>
+                </tr>
+                <tr>
+                  <td><code>--overwrite</code></td>
+                  <td>Overwrite existing output files. By default, existing files are skipped.</td>
+                  <td>Off (skip)</td>
+                </tr>
+                <tr>
+                  <td><code>--delete-original</code></td>
+                  <td>Delete original files after successful processing. Only works if input/output paths differ. <em>(CLI only)</em></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>-v, --verbose</code></td>
+                  <td>Show detailed per-file processing information. <em>(CLI only)</em></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>--version</code></td>
+                  <td>Display version number.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>--help</code></td>
+                  <td>Display help information.</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="help-examples">
+            <h2>Quick Examples</h2>
+            <p style="margin-bottom: 1rem;">Click to copy any command:</p>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                <span class="terminal-example-title">Convert to WebP</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp image.png --format webp">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">webp</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                <span class="terminal-example-title">Resize to 800px width</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp image.png --width 800">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--width</span> <span class="value">800</span>
+<span class="comment"># Height adjusts to preserve aspect ratio</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Batch convert a folder</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp ./images --format webp --out ./output">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./output</span>
+
+<span class="success">✓</span> <span class="output">Processed 12 file(s)</span>
+  <span class="output">Saved:</span> <span class="success">39.8 MB (82%)</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Convert to AVIF with quality</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp image.png --format avif --quality 70">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">avif</span> <span class="flag">--quality</span> <span class="value">70</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Flatten transparency to JPG</span>
+              </div>
+              <div class="terminal-example-body" data-copy='pulp logo.png --format jpg --background "#ff6b35"'>
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp logo.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--background</span> <span class="value">"#ff6b35"</span>
+<span class="comment"># Transparent areas become orange</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-example-header">
+                
+                
+                
+                <span class="terminal-example-title">Batch resize with auto-suffix</span>
+              </div>
+              <div class="terminal-example-body" data-copy="pulp ./images --width 800 --auto-suffix --format webp">
+                <button class="terminal-example-copy" aria-label="Copy command">
+                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span>
+<span class="comment"># Output: photo-800w.webp</span></pre>
+              </div>
+            </div>
+          </section>
+
+          <section id="help-advanced">
+            <h2>Advanced Examples</h2>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Web Optimization</h3>
+              <div class="terminal-example">
+                <div class="terminal-example-header">
+                  
+                  
+                  
+                  <span class="terminal-example-title">Optimize assets for web deployment</span>
+                </div>
+                <div class="terminal-example-body" data-copy="pulp ./assets --format webp --quality 85 --out ./public/images">
+                  <button class="terminal-example-copy" aria-label="Copy command">
+                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <pre><span class="cmd">$</span> pulp <span class="value">./assets</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--quality</span> <span class="value">85</span> <span class="flag">--out</span> <span class="value">./public/images</span></pre>
+                </div>
+              </div>
+            </div>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Responsive Images</h3>
+              <div class="terminal-example">
+                <div class="terminal-example-header">
+                  
+                  
+                  
+                  <span class="terminal-example-title">Generate multiple sizes for srcset</span>
+                </div>
+                <div class="terminal-example-body">
+                  <pre><span class="comment"># Run multiple times with different widths:</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">400</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="comment"># Creates: photo-400w.webp, photo-800w.webp, photo-1200w.webp</span></pre>
+                </div>
+              </div>
+            </div>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Social Media</h3>
+              <div class="terminal-example">
+                <div class="terminal-example-header">
+                  
+                  
+                  
+                  <span class="terminal-example-title">Create Open Graph / Twitter card image</span>
+                </div>
+                <div class="terminal-example-body" data-copy='pulp cover.png --format jpg --quality 90 --width 1200 --height 630 --background "#ffffff"'>
+                  <button class="terminal-example-copy" aria-label="Copy command">
+                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <pre><span class="cmd">$</span> pulp cover.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--quality</span> <span class="value">90</span> \
+    <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--height</span> <span class="value">630</span> <span class="flag">--background</span> <span class="value">"#ffffff"</span></pre>
+                </div>
+              </div>
+            </div>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">CI/CD Pipeline</h3>
+              <div class="terminal-example">
+                <div class="terminal-example-header">
+                  
+                  
+                  
+                  <span class="terminal-example-title">Build script optimization</span>
+                </div>
+                <div class="terminal-example-body" data-copy="pulp ./src/images --format webp --quality 80 --out ./dist/images --overwrite">
+                  <button class="terminal-example-copy" aria-label="Copy command">
+                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <pre><span class="cmd">$</span> pulp <span class="value">./src/images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--quality</span> <span class="value">80</span> \
+    <span class="flag">--out</span> <span class="value">./dist/images</span> <span class="flag">--overwrite</span>
+<span class="comment"># Overwrites on each build for fresh output</span></pre>
+                </div>
+              </div>
+            </div>
+            
+            <div class="help-subsection">
+              <h3 class="help-subsection-title">Delete Originals (CLI Only)</h3>
+              <div class="terminal-example">
+                <div class="terminal-example-header">
+                  
+                  
+                  
+                  <span class="terminal-example-title">Convert and remove originals</span>
+                </div>
+                <div class="terminal-example-body" data-copy="pulp ./images --format webp --out ./converted --delete-original">
+                  <button class="terminal-example-copy" aria-label="Copy command">
+                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./converted</span> <span class="flag">--delete-original</span>
+<span class="comment"># ⚠️ Original files are permanently deleted after processing</span></pre>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- When to Use CLI vs UI -->
+          <section id="help-when-to-use">
+            <h2>When to Use CLI vs UI</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="help-card">
+                <h4 class="help-card-title">Use CLI when:</h4>
+                <ul class="help-card-text" style="margin: 0; padding-left: 1.25rem;">
+                  <li>Automating workflows or scripts</li>
+                  <li>Processing large batches from command line</li>
+                  <li>Integrating with other tools</li>
+                  <li>You need to delete original files (CLI only)</li>
+                  <li>You're comfortable with command line</li>
+                </ul>
+              </div>
+              
+              <div class="help-card">
+                <h4 class="help-card-title">Use UI when:</h4>
+                <ul class="help-card-text" style="margin: 0; padding-left: 1.25rem;">
+                  <li>You're new to the tool</li>
+                  <li>You want visual feedback and guidance</li>
+                  <li>You need to understand option combinations</li>
+                  <li>You want to keep originals safe (UI processes copies)</li>
+                  <li>You prefer point-and-click interfaces</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
         </div>
       </div>
+      
+      <!-- Back to Top Button (works for both tabs) -->
+      <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+      </button>
     </main>
   </div>
 

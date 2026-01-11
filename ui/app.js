@@ -185,7 +185,7 @@ function setupForm() {
     if (useCustomOutput.checked) {
       outputDir.readOnly = false;
       outputDir.style.background = 'white';
-      outputDirHelper.textContent = 'Specify a custom output directory. Use ~ for home directory.';
+      outputDirHelper.textContent = 'Use ~ as a shortcut for your home folder (e.g., ~/my-images), or enter a full path.';
       await validateCustomOutputPath();
     } else {
       outputDir.readOnly = true;
@@ -195,10 +195,12 @@ function setupForm() {
     }
   });
   
-  // Validate custom output path on input
+  // Validate custom output path on input and update resolvedOutputPath
   outputDir.addEventListener('blur', async () => {
     if (useCustomOutput.checked) {
       await validateCustomOutputPath();
+      // Update resolvedOutputPath with the custom value
+      resolvedOutputPath = outputDir.value;
     }
   });
   
@@ -581,7 +583,7 @@ async function validateCustomOutputPath() {
         const helper = document.getElementById('output-dir-helper');
         if (helper) {
           helper.textContent = useCustomOutput.checked 
-            ? 'Specify a custom output directory. Use ~ for home directory.'
+            ? 'Use ~ as a shortcut for your home folder (e.g., ~/my-images), or enter a full path.'
             : 'Files will be saved in a new folder inside your home directory.';
         }
       }
@@ -734,7 +736,13 @@ async function handleSubmit(e) {
   }
   
   // Validate output directory before processing
-  let outputPath = resolvedOutputPath || (outputDir ? outputDir.value : null);
+  // When custom output is enabled, always use the current input value
+  let outputPath;
+  if (useCustomOutput && useCustomOutput.checked) {
+    outputPath = outputDir ? outputDir.value : null;
+  } else {
+    outputPath = resolvedOutputPath || (outputDir ? outputDir.value : null);
+  }
   if (!outputPath || outputPath.trim() === '') {
     alert('Error: Output directory is not set. Please wait for the directory path to be resolved, or specify a custom output directory.');
     return;
@@ -757,10 +765,7 @@ async function handleSubmit(e) {
   
   try {
     // Use stored resolved path or current value
-    // Expand ~ to home directory (will be done on server, but prepare it)
-    if (outputPath.startsWith('~')) {
-      outputPath = outputPath.replace('~', '');
-    }
+    // Note: ~ expansion is handled by the server
     
     const config = {
       width: widthInput.value ? parseInt(widthInput.value, 10) : null,
@@ -809,7 +814,8 @@ async function handleSubmit(e) {
     const results = await response.json();
     
     // Update output directory with resolved path
-    if (results.outputPath) {
+    // Only update if NOT using custom output (to preserve user's custom path)
+    if (results.outputPath && !useCustomOutput.checked) {
       if (outputDir) {
         outputDir.value = results.outputPath;
       }
@@ -1151,3 +1157,136 @@ function resetForm() {
   resultsSection.style.display = 'none';
 }
 
+
+// Terminal Example Copy Functionality
+function setupTerminalCopyButtons() {
+  document.querySelectorAll('.terminal-example-copy').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const body = btn.closest('.terminal-example-body');
+      const textToCopy = body?.dataset.copy;
+      
+      if (!textToCopy) return;
+      
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        
+        // Show success state
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        
+        if (copyIcon && checkIcon) {
+          copyIcon.style.display = 'none';
+          checkIcon.style.display = 'block';
+          
+          setTimeout(() => {
+            copyIcon.style.display = 'block';
+            checkIcon.style.display = 'none';
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+  });
+}
+
+// Back to Top Button (works for all tabs)
+function setupBackToTop() {
+  const backToTop = document.getElementById('back-to-top');
+  if (!backToTop) return;
+  
+  // Show/hide based on scroll position
+  window.addEventListener('scroll', () => {
+    backToTop.style.display = window.scrollY > 300 ? 'flex' : 'none';
+  });
+  
+  // Click handler
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// Help Sub-Navigation
+function setupHelpSubnav() {
+  const subnav = document.getElementById('help-subnav');
+  if (!subnav) return;
+  
+  const links = subnav.querySelectorAll('.help-subnav-link');
+  const helpTab = document.getElementById('help-tab');
+  
+  // Set first link as active initially
+  if (links.length > 0) {
+    links[0].classList.add('active');
+  }
+  
+  // Flag to temporarily disable scroll-based updates after click
+  let isClickScrolling = false;
+  
+  // Navigation links - smooth scroll
+  links.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = link.getAttribute('href').slice(1);
+      const target = document.getElementById(targetId);
+      
+      if (target) {
+        // Set active immediately on click
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        
+        // Disable scroll-based updates during animation
+        isClickScrolling = true;
+        
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Re-enable scroll updates after animation completes
+        setTimeout(() => {
+          isClickScrolling = false;
+        }, 800);
+      }
+    });
+  });
+  
+  // Track scroll position to update active nav link
+  function updateActiveOnScroll() {
+    // Skip if we're in the middle of a click-triggered scroll
+    if (isClickScrolling) return;
+    
+    // Only track when help tab is visible
+    if (!helpTab || !helpTab.classList.contains('active')) return;
+    
+    // Update active nav link based on scroll position
+    let currentSection = '';
+    const scrollOffset = 80; // Smaller offset for more accurate detection
+    
+    links.forEach(link => {
+      const targetId = link.getAttribute('href').slice(1);
+      const section = document.getElementById(targetId);
+      if (section) {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= scrollOffset) {
+          currentSection = targetId;
+        }
+      }
+    });
+    
+    // Update active class
+    if (currentSection) {
+      links.forEach(link => {
+        const targetId = link.getAttribute('href').slice(1);
+        link.classList.toggle('active', targetId === currentSection);
+      });
+    }
+  }
+  
+  // Listen to window scroll
+  window.addEventListener('scroll', updateActiveOnScroll);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  setupTerminalCopyButtons();
+  setupBackToTop();
+  setupHelpSubnav();
+});

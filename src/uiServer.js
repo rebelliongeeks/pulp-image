@@ -243,10 +243,17 @@ export async function startUIServer(port = 3000) {
   // API endpoint to open folder in file manager
   app.post('/api/open-folder', async (req, res) => {
     try {
-      const { path } = req.body;
-      if (!path) {
+      let { path: folderPath } = req.body;
+      if (!folderPath) {
         return res.status(400).json({ error: 'Path required' });
       }
+      
+      // Expand ~ to home directory
+      if (folderPath.startsWith('~')) {
+        folderPath = join(homedir(), folderPath.slice(1));
+      }
+      // Resolve to absolute path
+      folderPath = resolve(folderPath);
       
       // Determine OS and use appropriate command
       const platform = process.platform;
@@ -255,13 +262,13 @@ export async function startUIServer(port = 3000) {
       
       if (platform === 'darwin') {
         // macOS
-        command = `open "${path}"`;
+        command = `open "${folderPath}"`;
       } else if (platform === 'win32') {
         // Windows - use explorer to open in foreground
-        command = `explorer "${path}"`;
+        command = `explorer "${folderPath}"`;
       } else {
         // Linux and others - suppress stderr to avoid Wayland/Gnome noise
-        command = `xdg-open "${path}" 2>/dev/null || true`;
+        command = `xdg-open "${folderPath}" 2>/dev/null || true`;
         // Use shell to properly handle stderr redirection
         options = { shell: '/bin/bash' };
       }
@@ -271,7 +278,7 @@ export async function startUIServer(port = 3000) {
         if (platform === 'linux' || (platform !== 'darwin' && platform !== 'win32')) {
           // Use spawn with stderr redirected instead of execAsync for better control
           await new Promise((resolve, reject) => {
-            const child = spawn('xdg-open', [path], {
+            const child = spawn('xdg-open', [folderPath], {
               stdio: ['ignore', 'ignore', 'ignore'], // Suppress all output
               detached: true
             });
@@ -288,17 +295,16 @@ export async function startUIServer(port = 3000) {
         console.error('Error opening folder:', execError);
         res.status(500).json({ 
           error: 'Could not open folder automatically.',
-          path: path // Include path so UI can display it
+          path: folderPath // Include path so UI can display it
         });
       }
       
     } catch (error) {
       // Don't expose raw errors to user
       console.error('Error opening folder:', error);
-      const { path } = req.body;
       res.status(500).json({ 
         error: 'Could not open folder automatically.',
-        path: path || null // Include path if available
+        path: req.body?.path || null // Include path if available
       });
     }
   });
