@@ -1,6 +1,6 @@
 {
   "name": "pulp-image",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A CLI tool for processing images with resize, format conversion, and optimization",
   "type": "module",
   "main": "bin/pulp.js",
