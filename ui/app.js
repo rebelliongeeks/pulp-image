@@ -1222,28 +1222,49 @@ function setupHelpSubnav() {
   
   // Flag to temporarily disable scroll-based updates after click
   let isClickScrolling = false;
+  let clickedSectionId = null;
   
   // Navigation links - smooth scroll
   links.forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
+      
+      // IMMEDIATELY block scroll detection before anything else
+      isClickScrolling = true;
+      
       const targetId = link.getAttribute('href').slice(1);
       const target = document.getElementById(targetId);
       
       if (target) {
+        clickedSectionId = targetId;
+        
         // Set active immediately on click
         links.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
         
-        // Disable scroll-based updates during animation
-        isClickScrolling = true;
-        
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Use requestAnimationFrame to ensure DOM update before scroll
+        requestAnimationFrame(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
         
         // Re-enable scroll updates after animation completes
         setTimeout(() => {
-          isClickScrolling = false;
-        }, 800);
+          // Force the clicked section to stay active after scroll settles
+          if (clickedSectionId) {
+            links.forEach(l => {
+              const id = l.getAttribute('href').slice(1);
+              l.classList.toggle('active', id === clickedSectionId);
+            });
+          }
+          // Small additional delay before allowing scroll detection again
+          setTimeout(() => {
+            isClickScrolling = false;
+            clickedSectionId = null;
+          }, 150);
+        }, 900);
+      } else {
+        // Reset if target not found
+        isClickScrolling = false;
       }
     });
   });
@@ -1256,20 +1277,31 @@ function setupHelpSubnav() {
     // Only track when help tab is visible
     if (!helpTab || !helpTab.classList.contains('active')) return;
     
-    // Update active nav link based on scroll position
+    // Find the section whose top is closest to (but not below) the viewport top
+    // This handles cases where sections can't scroll all the way to the top
     let currentSection = '';
-    const scrollOffset = 80; // Smaller offset for more accurate detection
+    let bestTop = -Infinity;
+    const threshold = 150; // How far below viewport top a section can be and still be "current"
     
     links.forEach(link => {
       const targetId = link.getAttribute('href').slice(1);
       const section = document.getElementById(targetId);
       if (section) {
         const rect = section.getBoundingClientRect();
-        if (rect.top <= scrollOffset) {
+        // Section is "in view" if its top is above the threshold
+        // Pick the one with the largest top value that's still <= threshold
+        // (i.e., the one closest to the top but still visible)
+        if (rect.top <= threshold && rect.top > bestTop) {
+          bestTop = rect.top;
           currentSection = targetId;
         }
       }
     });
+    
+    // Fallback: if no section found, use first one
+    if (!currentSection && links.length > 0) {
+      currentSection = links[0].getAttribute('href').slice(1);
+    }
     
     // Update active class
     if (currentSection) {

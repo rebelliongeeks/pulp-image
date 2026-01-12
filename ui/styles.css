@@ -794,6 +794,10 @@ body {
 }
 
 /* Help Tab */
+#help-welcome {
+  margin-top: 4rem;
+}
+
 .help-content {
   max-width: 800px;
 }

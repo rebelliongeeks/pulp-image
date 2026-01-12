@@ -294,11 +294,15 @@
           </nav>
 
           <!-- Welcome -->
-          <div class="help-card" style="background: var(--orange-bg-light); margin-bottom: 1.5rem;">
-            <h4 class="help-card-title" style="font-size: 1.1rem; color: var(--orange-text);">Welcome to Pulp Image</h4>
-            <p class="help-card-text">This browser UI works fully offline. The CLI is optional for automation, advanced workflows, or if you prefer the terminal.</p>
-            <p class="help-card-text" style="margin-top: 0.5rem;">If you downloaded this UI as a portable package from the Pulp website, you don't need to install the CLI — it's already included. If you want to use the CLI separately, see the <a href="#help-install" style="color: var(--orange-text); font-weight: 600;">installation guide</a>.</p>
-          </div>
+          <section id="help-welcome">
+            <h2>Welcome to Pulp Image UI</h2>
+            <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">This browser-based UI includes all features of the CLI, except automatic deletion of original files, as browser security prevents file deletion. The CLI is optional and only needed for automation, advanced workflows, or if you prefer working in the terminal.</p>
+            
+            <p style="margin-bottom: 0.25rem;"><strong>Everything Happens Locally</strong></p>
+            <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">All image processing runs directly on your computer. No files are uploaded to the internet. Your images stay private and processing remains fast. Pulp Image UI works fully offline, even if your browser shows upload notifications.</p>
+            
+            <p style="color: var(--text-secondary);">If you downloaded this UI as a portable package from the <a target="_blank" href="https://pulp.run">Pulp</a> website, you do not need to install the CLI. If you want to use the CLI separately, see the <a href="#help-install">installation guide</a>.</p>
+          </section>
 
           <!-- Compression Behavior -->
 
@@ -313,7 +317,7 @@
                 <tr><td><code>avif</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>50</td></tr>
               </tbody>
             </table>
-            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;"><em>Note: Resize does not affect compression — it only changes dimensions.</em></p>
+            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;"><em>Note: Resize does not affect compression, it only changes dimensions.</em></p>
           </section>
 
           <!-- UI Options Guide -->
@@ -361,8 +365,8 @@
               <h3 class="help-subsection-title">Alpha (Transparency)</h3>
               <p style="margin-bottom: 0.5rem;">When converting to JPG (no transparency):</p>
               <ul style="margin: 0 0 0 1.25rem; color: var(--text-secondary);">
-                <li><strong>Flatten</strong> — Fill transparent areas with background color</li>
-                <li><strong>Error</strong> — Fail if image has transparency</li>
+                <li><strong>Flatten</strong> = Fill transparent areas with background color</li>
+                <li><strong>Error</strong> = Fail if image has transparency</li>
               </ul>
             </div>
             
@@ -381,9 +385,9 @@
               <p style="margin-bottom: 0.5rem;">Flexible output filename generation. <em>CLI users already have shell tools for renaming that can be piped with Pulp.</em></p>
               <p style="margin-bottom: 0.5rem;"><strong>Supported Tokens:</strong></p>
               <ul style="margin: 0 0 1rem 1.25rem; color: var(--text-secondary);">
-                <li><code>{name}</code> — Original basename (without extension)</li>
-                <li><code>{ext}</code> — Output extension (without leading dot)</li>
-                <li><code>{index}</code> — 1-based index in batch</li>
+                <li><code>{name}</code> = Original basename (without extension)</li>
+                <li><code>{ext}</code> = Output extension (without leading dot)</li>
+                <li><code>{index}</code> = 1-based index in batch</li>
               </ul>
               <table class="help-table">
                 <thead><tr><th>Pattern</th><th>Result</th></tr></thead>
@@ -424,7 +428,7 @@
 
           <section id="help-install">
             <h2>Installing the CLI (Optional)</h2>
-            <p>The CLI is optional. Only install if you need automation, scripting, or CLI-only features like <code>--delete-original</code>.</p>
+            <p>The CLI is optional. Install it if you prefer working in the terminal, need automation or scripting, or want access to CLI-only features such as <code>--delete-original</code>.</p>
             
             <div class="terminal-example">
               <div class="terminal-example-header">
@@ -843,7 +847,6 @@
                   <li>You're new to the tool</li>
                   <li>You want visual feedback and guidance</li>
                   <li>You need to understand option combinations</li>
-                  <li>You want to keep originals safe (UI processes copies)</li>
                   <li>You prefer point-and-click interfaces</li>
                 </ul>
               </div>
