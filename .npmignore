@@ -3,6 +3,13 @@
 .gitignore
 .vscode/
 .idea/
+ROADMAP-PRIVATE.md
+DEV-NOTES.md
+.cursorrules
+
+# Related Projects
+pulp-image-site/
+pulp-image-packaging/
 
 # Node / dev
 node_modules/

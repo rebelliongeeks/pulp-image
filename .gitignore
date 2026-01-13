@@ -39,4 +39,10 @@ temp/
 *.tmp
 
 # Development Notes
-ROADMAP.md
+ROADMAP-PRIVATE.md
+DEV-NOTES.md
+.cursorrules
+
+# Related Projects (separate git repos)
+pulp-image-site/
+pulp-image-packaging/
