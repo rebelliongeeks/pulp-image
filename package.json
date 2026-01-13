@@ -1,7 +1,7 @@
 {
   "name": "pulp-image",
   "version": "0.1.7",
-  "description": "A CLI tool for processing images with resize, format conversion, and optimization",
+  "description": "Full-featured image processing CLI with a browser UI. 100% local.",
   "type": "module",
   "main": "bin/pulp.js",
   "bin": {
@@ -15,7 +15,15 @@
     "resize",
     "convert",
     "optimize",
-    "cli"
+    "cli",
+    "ui",
+    "browser",
+    "local",
+    "batch",
+    "webp",
+    "avif",
+    "png",
+    "jpg"
   ],
   "author": "Rebellion Geeks",
   "license": "MIT",
