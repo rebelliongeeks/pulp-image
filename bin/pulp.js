@@ -26,7 +26,7 @@ const banner = getBanner(pkg.version);
 
 program
   .name('pulp')
-  .description('A CLI tool for processing images with resize, format conversion, and optimization')
+  .description('Full-featured image processing CLI with a browser UI. 100% local.')
   .version(pkg.version)  
   .addHelpText('before', chalk.cyan(banner))
   .argument('[input]', 'Input file or directory')
