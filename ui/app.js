@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadVersion(); // Load version from backend
   await updateOutputDirectory(); // Initialize output directory
   await updateUI();
+  checkForUpdates(); // Check for updates (non-blocking)
 });
 
 // Load version from backend (single source of truth)
@@ -1314,6 +1315,55 @@ function setupHelpSubnav() {
   
   // Listen to window scroll
   window.addEventListener('scroll', updateActiveOnScroll);
+}
+
+// Check for Updates
+async function checkForUpdates() {
+  try {
+    const response = await fetch('/api/check-update');
+    if (!response.ok) return;
+    
+    const updateInfo = await response.json();
+    
+    if (updateInfo.updateAvailable && updateInfo.latestVersion) {
+      showUpdateBanner(updateInfo.currentVersion, updateInfo.latestVersion);
+    }
+  } catch (error) {
+    // Silently fail - update check is optional
+    console.debug('Update check failed:', error);
+  }
+}
+
+// Show Update Banner
+function showUpdateBanner(currentVersion, latestVersion) {
+  // Don't show if already shown
+  if (document.getElementById('update-banner')) return;
+  
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.className = 'update-banner';
+  banner.innerHTML = `
+    <div class="update-banner-content">
+      <span class="update-banner-text">
+        Update available: v${currentVersion} → v${latestVersion}
+      </span>
+      <span class="update-banner-command">
+        Run: <code>npm update -g pulp-image</code>
+      </span>
+    </div>
+    <button class="update-banner-close" aria-label="Dismiss">&times;</button>
+  `;
+  
+  // Add close handler
+  banner.querySelector('.update-banner-close').addEventListener('click', () => {
+    banner.remove();
+  });
+  
+  // Insert at top of container
+  const container = document.querySelector('.container');
+  if (container) {
+    container.insertBefore(banner, container.firstChild);
+  }
 }
 
 // Initialize when DOM is ready

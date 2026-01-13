@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import open from 'open';
 import { runJob } from './runJob.js';
+import { checkForUpdate } from './updateCheck.js';
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
@@ -319,6 +320,23 @@ export async function startUIServer(port = 3000) {
     } catch (error) {
       console.error('Error reading version from package.json:', error);
       res.status(500).json({ error: 'Failed to read version' });
+    }
+  });
+  
+  // Update check endpoint - checks npm registry for newer versions
+  app.get('/api/check-update', async (req, res) => {
+    try {
+      const packageJsonPath = join(projectRoot, 'package.json');
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const currentVersion = packageJson.version;
+      
+      const force = req.query.force === 'true';
+      const updateInfo = await checkForUpdate(currentVersion, { force });
+      
+      res.json(updateInfo);
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      res.status(500).json({ error: 'Failed to check for updates' });
     }
   });
 

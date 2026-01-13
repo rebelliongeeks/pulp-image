@@ -19,6 +19,7 @@ import { planTasks } from '../src/planTasks.js';
 import { Reporter } from '../src/reporter.js';
 import { runJob } from '../src/runJob.js';
 import { startUIServer } from '../src/uiServer.js';
+import { checkForUpdate, formatUpdateMessage } from '../src/updateCheck.js';
 import { statSync, existsSync } from 'fs';
 
 const program = new Command();
@@ -72,6 +73,9 @@ Compression Behavior:
   .action(async (input, options) => {
     // Display banner
     console.log(chalk.cyan(banner));
+    
+    // Start update check early (runs in background while processing)
+    const updateCheckPromise = checkForUpdate(pkg.version).catch(() => null);
     
     // Normalize config
     const config = {
@@ -212,6 +216,15 @@ Compression Behavior:
       results.failed.forEach(f => reporter.recordFailed(f.filePath, new Error(f.error)));
       reporter.printSummary(config.verbose);
     }
+    
+    // Show update notification at the end (if available)
+    const updateInfo = await updateCheckPromise;
+    if (updateInfo) {
+      const message = formatUpdateMessage(updateInfo);
+      if (message) {
+        console.log(chalk.yellow(`\n${message}`));
+      }
+    }
   });
 
 // UI command
@@ -226,6 +239,14 @@ program
       console.error(chalk.red(`\nError: Invalid port number: ${options.port}`));
       process.exit(1);
     }
+    
+    // Check for updates when starting UI
+    checkForUpdate(pkg.version).then(updateInfo => {
+      const message = formatUpdateMessage(updateInfo);
+      if (message) {
+        console.log(chalk.yellow(`${message}\n`));
+      }
+    }).catch(() => {}); // Silently ignore errors
     
     try {
       const { server } = await startUIServer(port);
