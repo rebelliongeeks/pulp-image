@@ -8,7 +8,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| ~~**Format Conversion**~~ | ~~Convert between PNG, JPG, WebP, AVIF, GIF, TIFF~~ |
+| ~~**Format Conversion**~~ | ~~Convert between PNG, JPG, WebP, AVIF~~ |
 | ~~**Resize**~~ | ~~Resize by width, height, or both with auto aspect ratio~~ |
 | ~~**Quality Control**~~ | ~~Adjust compression quality (1-100)~~ |
 | ~~**Lossless Mode**~~ | ~~Preserve full quality for WebP and AVIF~~ |
@@ -27,6 +27,7 @@
 | Feature | Description |
 |---------|-------------|
 | **UI Redesign** | Modern tabbed interface with dark mode |
+| **Results Redesign** | Clearer output with operation summary (CLI and UI) |
 | **Rotate** | Rotate images by 90°, 180°, 270°, or custom angle |
 | **Flip / Mirror** | Flip vertically or horizontally |
 | **Grayscale** | Convert images to black and white |
