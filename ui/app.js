@@ -1344,12 +1344,18 @@ function showUpdateBanner(currentVersion, latestVersion) {
   banner.className = 'update-banner';
   banner.innerHTML = `
     <div class="update-banner-content">
-      <span class="update-banner-text">
-        Update available: v${currentVersion} → v${latestVersion}
-      </span>
-      <span class="update-banner-command">
-        Run: <code>npm update -g pulp-image</code>
-      </span>
+      <span class="update-banner-icon">🎉</span>
+      <div class="update-banner-text">
+        <strong>Update available!</strong>
+        <span class="update-banner-versions">v${currentVersion} → v${latestVersion}</span>
+      </div>
+      <div class="update-banner-actions">
+        <span class="update-banner-hint">CLI users:</span>
+        <code>npm update -g pulp-image</code>
+        <span class="update-banner-separator">|</span>
+        <span class="update-banner-hint">Portable:</span>
+        <a href="https://pulp.run" target="_blank" rel="noopener">pulp.run</a>
+      </div>
     </div>
     <button class="update-banner-close" aria-label="Dismiss">&times;</button>
   `;

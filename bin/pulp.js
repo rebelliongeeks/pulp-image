@@ -25,10 +25,27 @@ import { statSync, existsSync } from 'fs';
 const program = new Command();
 const banner = getBanner(pkg.version);
 
+// Format update message with colors for CLI
+function formatUpdateBox(updateMsg) {
+  if (!updateMsg) return null;
+  
+  const lines = [
+    '',
+    chalk.bgYellow.black(' UPDATE AVAILABLE '),
+    '',
+    `  ${chalk.gray('Current:')} ${chalk.white(updateMsg.current)}`,
+    `  ${chalk.gray('Latest:')}  ${chalk.green.bold(updateMsg.latest)}`,
+    '',
+    `  ${chalk.cyan('npm update -g pulp-image')}`,
+    ''
+  ];
+  
+  return lines.join('\n');
+}
+
 program
   .name('pulp')
   .description('Full-featured image processing CLI with a browser UI. 100% local.')
-  .version(pkg.version)  
   .addHelpText('before', chalk.cyan(banner))
   .argument('[input]', 'Input file or directory')
   .option('-w, --width <number>', 'Output width in pixels')
@@ -220,9 +237,9 @@ Compression Behavior:
     // Show update notification at the end (if available)
     const updateInfo = await updateCheckPromise;
     if (updateInfo) {
-      const message = formatUpdateMessage(updateInfo);
-      if (message) {
-        console.log(chalk.yellow(`\n${message}`));
+      const updateMsg = formatUpdateMessage(updateInfo);
+      if (updateMsg) {
+        console.log(formatUpdateBox(updateMsg));
       }
     }
   });
@@ -242,9 +259,9 @@ program
     
     // Check for updates when starting UI
     checkForUpdate(pkg.version).then(updateInfo => {
-      const message = formatUpdateMessage(updateInfo);
-      if (message) {
-        console.log(chalk.yellow(`${message}\n`));
+      const updateMsg = formatUpdateMessage(updateInfo);
+      if (updateMsg) {
+        console.log(formatUpdateBox(updateMsg));
       }
     }).catch(() => {}); // Silently ignore errors
     
@@ -269,5 +286,25 @@ program
     }
   });
 
-program.parse();
+// Handle --version manually (before Commander parses) to include update check
+if (process.argv.includes('--version') || process.argv.includes('-V')) {
+  (async () => {
+    console.log(pkg.version);
+    
+    // Check for updates
+    try {
+      const updateInfo = await checkForUpdate(pkg.version);
+      const updateMsg = formatUpdateMessage(updateInfo);
+      if (updateMsg) {
+        console.log(formatUpdateBox(updateMsg));
+      }
+    } catch {
+      // Silently ignore errors
+    }
+    
+    process.exit(0);
+  })();
+} else {
+  program.parse();
+}
 

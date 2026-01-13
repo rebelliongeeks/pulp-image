@@ -184,12 +184,17 @@ export async function checkForUpdate(currentVersion, options = {}) {
 /**
  * Format update notification message for CLI
  * @param {object} updateInfo - Result from checkForUpdate
- * @returns {string|null} Formatted message or null if no update
+ * @returns {object|null} Message parts or null if no update
  */
 export function formatUpdateMessage(updateInfo) {
   if (!updateInfo.updateAvailable || !updateInfo.latestVersion) {
     return null;
   }
   
-  return `Update available: ${updateInfo.currentVersion} → ${updateInfo.latestVersion}\nRun: npm update -g pulp-image`;
+  return {
+    current: updateInfo.currentVersion,
+    latest: updateInfo.latestVersion,
+    // Simple text version for basic usage
+    text: `Update available: ${updateInfo.currentVersion} → ${updateInfo.latestVersion}\nRun: npm update -g pulp-image`
+  };
 }
