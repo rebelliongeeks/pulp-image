@@ -1,6 +1,6 @@
 {
   "name": "pulp-image",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Full-featured image processing CLI with a browser UI. 100% local.",
   "type": "module",
   "main": "bin/pulp.js",
