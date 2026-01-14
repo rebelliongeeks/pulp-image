@@ -5,7 +5,7 @@ Full-featured image processing CLI with a browser UI. 100% local.
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 
-**[Website](https://pulp.run)** · **[CLI Docs](https://pulp.run/cli.html)** · **[UI Docs](https://pulp.run/ui.html)** · **[Roadmap](ROADMAP.md)** · **[Changelog](CHANGELOG.md)**
+**[Website](https://pulp.run)** · **[CLI Docs](https://pulp.run/cli.html)** · **[UI Docs](https://pulp.run/ui.html)** · **[Roadmap](https://pulp.run/roadmap.html)** · **[Changelog](https://pulp.run/changelog.html)**
 
 ---
 
@@ -76,7 +76,7 @@ See the [UI documentation](https://pulp.run/ui.html) for details.
 
 ## Roadmap
 
-See the full [Roadmap](ROADMAP.md) for upcoming features.
+See the full [Roadmap](https://pulp.run/roadmap.html) for upcoming features.
 
 **Coming soon:**
 - UI Redesign with dark mode
