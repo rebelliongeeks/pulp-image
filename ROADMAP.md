@@ -19,6 +19,7 @@
 | ~~**Batch Processing**~~ | ~~Process entire folders at once~~ |
 | ~~**Delete Originals**~~ | ~~Remove source files after processing (CLI only)~~ |
 | ~~**Browser-Based UI**~~ | ~~Full-featured interface, works offline, no uploads~~ |
+| ~~**Update Checker**~~ | ~~Notifies you when a new version is available~~ |
 
 ---
 

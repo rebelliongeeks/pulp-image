@@ -12,6 +12,13 @@ See [Roadmap](ROADMAP.md) for upcoming features (v0.2.0: UI Redesign, Rotate, Fl
 
 ---
 
+## [0.1.9] - 2026-01-14
+
+### Added
+- Update checker for CLI and UI(Supports both npm users and portable app users)
+
+---
+
 ## [0.1.8] - 2026-01-13
 
 ### Changed
