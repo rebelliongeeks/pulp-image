@@ -94,4 +94,5 @@ MIT
 
 ## Author
 
-[Rebellion Geeks](https://github.com/rebelliongeeks)
+Made in Cyprus with ❤️ by [Rebellion Geeks](https://rebelliongeeks.com)
+
