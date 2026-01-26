@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help & CLI Reference - Pulp Image</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <img src="/assets/pulp-logo-white.svg" alt="Pulp" class="logo">
+        <div class="brand-text">
+          <span class="header-title">Pulp Image</span>
+          <span class="header-subtitle">by <a href="https://rebelliongeeks.com" target="_blank">Rebellion Geeks</a></span>
+        </div>
+        <span class="header-version" id="version"></span>
+      </div>
+      <div class="header-right">
+        <a href="index.html" class="header-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span>Back to App</span>
+        </a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="help-page">
+      <div class="help-container">
+        
+        <!-- Sub-Navigation -->
+        <nav class="help-subnav" id="help-subnav">
+          <a class="help-subnav-link" href="#help-welcome">Welcome</a>
+          <a class="help-subnav-link" href="#help-compression">Formats</a>
+          <a class="help-subnav-link" href="#help-ui-options">UI Guide</a>
+          <a class="help-subnav-link" href="#help-tips">Tips</a>
+          <a class="help-subnav-link" href="#help-install">Install CLI</a>
+          <a class="help-subnav-link" href="#help-reference">CLI Options</a>
+          <a class="help-subnav-link" href="#help-examples">Examples</a>
+          <a class="help-subnav-link" href="#help-when-to-use">CLI vs UI</a>
+        </nav>
+        <div class="help-subnav-placeholder" id="help-subnav-placeholder"></div>
+
+        <div class="help-content">
+          
+          <!-- Welcome -->
+          <section id="help-welcome" class="help-section-page">
+            <h2>Welcome to Pulp Image UI</h2>
+            <p>This browser-based UI includes all features of the CLI, except automatic deletion of original files as browser security prevents file deletion. The CLI is optional and only needed for automation, advanced workflows, or if you prefer the terminal.</p>
+            
+            <div class="help-highlight">
+              <h4>Everything Happens Locally</h4>
+              <p>All image processing runs directly on your computer. No files are uploaded to the internet. Your images stay private and processing remains fast. Pulp Image UI works fully offline, even if your browser shows upload notifications.</p>
+            </div>
+            
+            <p>If you downloaded this UI as a portable package from the <a href="https://pulp.run" target="_blank">Pulp website</a>, you do not need to install the CLI. If you want to use the CLI separately, see the <a href="#help-install">installation guide</a>.</p>
+          </section>
+
+          <!-- Compression Behavior -->
+          <section id="help-compression" class="help-section-page">
+            <h2>Formats & Compression</h2>
+            <table class="help-table">
+              <thead>
+                <tr>
+                  <th>Format</th>
+                  <th>Transparency</th>
+                  <th>Compression</th>
+                  <th>Default Quality</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>PNG</code></td><td>✓ Yes</td><td>Always lossless</td><td>-</td></tr>
+                <tr><td><code>JPG</code></td><td>✗ No</td><td>Always lossy</td><td>80</td></tr>
+                <tr><td><code>WebP</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>80</td></tr>
+                <tr><td><code>AVIF</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>50</td></tr>
+              </tbody>
+            </table>
+            <p class="help-note"><em>Note: Resize and other transformations do not affect compression quality.</em></p>
+          </section>
+
+          <!-- UI Options Guide -->
+          <section id="help-ui-options" class="help-section-page">
+            <h2>UI Options Guide</h2>
+            
+            <div class="help-subsection">
+              <h3>Selecting Images</h3>
+              <p>Choose between <strong>Files</strong> (individual images) or <strong>Folder</strong> (all images in a directory). Supports drag-and-drop.</p>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Output Directory</h3>
+              <p>Default: <code>~/pulp-image-results/[timestamp]/</code></p>
+              <p>Enable "Use custom directory" to specify your own path. Use <code>~</code> for home directory.</p>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Dimensions (Width & Height)</h3>
+              <table class="help-table">
+                <thead><tr><th>Setting</th><th>Result</th></tr></thead>
+                <tbody>
+                  <tr><td>Width only</td><td>Height adjusts to preserve aspect ratio</td></tr>
+                  <tr><td>Height only</td><td>Width adjusts to preserve aspect ratio</td></tr>
+                  <tr><td>Both</td><td>Exact dimensions (may crop)</td></tr>
+                  <tr><td>Neither</td><td>Original size kept, other options still apply</td></tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Quality Slider</h3>
+              <p>Controls compression for JPG, WebP, AVIF (1-100). Disabled for PNG and when lossless is enabled.</p>
+              <table class="help-table">
+                <thead><tr><th>Range</th><th>Use Case</th></tr></thead>
+                <tbody>
+                  <tr><td>90-100</td><td>Near-lossless, important photos</td></tr>
+                  <tr><td>75-89</td><td>Good balance (recommended)</td></tr>
+                  <tr><td>50-74</td><td>Thumbnails, previews</td></tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Alpha (Transparency)</h3>
+              <p>When converting to JPG (no transparency):</p>
+              <ul>
+                <li><strong>Flatten</strong> = Fill transparent areas with background color</li>
+                <li><strong>Error</strong> = Fail if image has transparency</li>
+              </ul>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Auto Suffix</h3>
+              <p>Adds dimensions to filename:</p>
+              <ul>
+                <li>Width 800 → <code>photo-800w.webp</code></li>
+                <li>Height 600 → <code>photo-600h.webp</code></li>
+                <li>Both → <code>photo-800x600.webp</code></li>
+              </ul>
+              <p class="help-note"><em>Note: If using a rename pattern, add dimensions directly in the pattern (auto suffix won't apply).</em></p>
+            </div>
+            
+            <div class="help-subsection">
+              <h3>Rename Patterns</h3>
+              <p>Flexible output filename generation.</p>
+              <p><strong>Supported Tokens:</strong></p>
+              <ul>
+                <li><code>{name}</code> = Original basename (without extension)</li>
+                <li><code>{ext}</code> = Output extension (without leading dot)</li>
+                <li><code>{index}</code> = 1-based index in batch</li>
+              </ul>
+              <table class="help-table">
+                <thead><tr><th>Pattern</th><th>Result</th></tr></thead>
+                <tbody>
+                  <tr><td><code>{name}-optimized.{ext}</code></td><td>photo-optimized.webp</td></tr>
+                  <tr><td><code>{index}-{name}.{ext}</code></td><td>1-photo.webp, 2-cat.webp</td></tr>
+                  <tr><td><code>thumb-{name}.{ext}</code></td><td>thumb-photo.webp</td></tr>
+                  <tr><td><code>image-{index}.{ext}</code></td><td>image-1.webp, image-2.webp</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Tips -->
+          <section id="help-tips" class="help-section-page">
+            <h2>Tips & Best Practices</h2>
+            
+            <div class="help-cards-grid">
+              <div class="help-card">
+                <h4>🖼️ Web Images</h4>
+                <p>WebP at quality 80-85. Great compression, modern browser support.</p>
+              </div>
+              
+              <div class="help-card">
+                <h4>📱 Responsive Images</h4>
+                <p>Process same images with different widths (400, 800, 1200) + Auto Suffix.</p>
+              </div>
+              
+              <div class="help-card">
+                <h4>🎨 Graphics & Logos</h4>
+                <p>PNG or WebP lossless to preserve sharp edges and text.</p>
+              </div>
+              
+              <div class="help-card">
+                <h4>📷 Photos</h4>
+                <p>JPG 85-90 or WebP 80-85 for best size/quality balance.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Install CLI -->
+          <section id="help-install" class="help-section-page">
+            <h2>Installing the CLI (Optional)</h2>
+            <p>The CLI is optional. Install it if you prefer working in the terminal, need automation or scripting, or want access to CLI-only features such as <code>--delete-original</code>.</p>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Install globally via npm (requires Node.js 18+)</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> npm install -g pulp-image</pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Verify installation</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp --version</pre>
+              </div>
+            </div>
+            
+            <div class="help-card" style="margin-top: 1.5rem;">
+              <h4>Don't have Node.js?</h4>
+              <p>Download from <a href="https://nodejs.org" target="_blank">nodejs.org</a> (LTS version). After installing, open a terminal:</p>
+              <ul>
+                <li><strong>macOS:</strong> Press Cmd + Space, type "Terminal"</li>
+                <li><strong>Windows:</strong> Search "PowerShell" or "Command Prompt"</li>
+                <li><strong>Linux:</strong> Open your terminal application</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- CLI Reference -->
+          <section id="help-reference" class="help-section-page">
+            <h2>CLI Options</h2>
+            <p>Complete reference for all CLI options:</p>
+            
+            <table class="help-table">
+              <thead><tr><th>Option</th><th>Description</th><th>Default</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>-w, --width &lt;number&gt;</code></td>
+                  <td>Output width in pixels. Aspect ratio preserved if height not specified.</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td><code>-h, --height &lt;number&gt;</code></td>
+                  <td>Output height in pixels. Aspect ratio preserved if width not specified.</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td><code>-f, --format &lt;format&gt;</code></td>
+                  <td>Output format: <code>png</code>, <code>jpg</code>, <code>webp</code>, or <code>avif</code></td>
+                  <td>Same as input</td>
+                </tr>
+                <tr>
+                  <td><code>-o, --out &lt;dir&gt;</code></td>
+                  <td>Output directory. Created automatically if it doesn't exist.</td>
+                  <td><code>./pulp-image-results</code></td>
+                </tr>
+                <tr>
+                  <td><code>--quality &lt;number&gt;</code></td>
+                  <td>Quality for lossy formats (1-100). Higher = better quality, larger file.</td>
+                  <td>JPG: 80, WebP: 80, AVIF: 50</td>
+                </tr>
+                <tr>
+                  <td><code>--lossless</code></td>
+                  <td>Use lossless compression for WebP and AVIF. PNG is always lossless.</td>
+                  <td>Off (lossy)</td>
+                </tr>
+                <tr>
+                  <td><code>--suffix &lt;text&gt;</code></td>
+                  <td>Custom suffix added before file extension.</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td><code>--auto-suffix</code></td>
+                  <td>Automatically add size-based suffix: <code>-800w</code>, <code>-600h</code>, or <code>-800x600</code></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>--background &lt;color&gt;</code></td>
+                  <td>Background color (hex) for transparency flattening when converting to JPG.</td>
+                  <td><code>#ffffff</code></td>
+                </tr>
+                <tr>
+                  <td><code>--alpha-mode &lt;mode&gt;</code></td>
+                  <td>How to handle transparency: <code>flatten</code> or <code>error</code></td>
+                  <td><code>flatten</code></td>
+                </tr>
+                <tr>
+                  <td><code>--overwrite</code></td>
+                  <td>Overwrite existing output files. By default, existing files are skipped.</td>
+                  <td>Off (skip)</td>
+                </tr>
+                <tr>
+                  <td><code>--delete-original</code></td>
+                  <td>Delete original files after processing. <em>(CLI only)</em></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>-v, --verbose</code></td>
+                  <td>Show detailed per-file processing information. <em>(CLI only)</em></td>
+                  <td>Off</td>
+                </tr>
+                <tr>
+                  <td><code>--version</code></td>
+                  <td>Display version number.</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td><code>--help</code></td>
+                  <td>Display help information.</td>
+                  <td>-</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Examples -->
+          <section id="help-examples" class="help-section-page">
+            <h2>Quick Examples</h2>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Convert to WebP</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">webp</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Resize to 800px width</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--width</span> <span class="value">800</span>
+<span class="comment"># Height adjusts to preserve aspect ratio</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Batch convert a folder</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./output</span>
+
+<span class="success">✓</span> <span class="output">Processed 12 file(s)</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Convert to AVIF with quality</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">avif</span> <span class="flag">--quality</span> <span class="value">70</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Flatten transparency to JPG</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp logo.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--background</span> <span class="value">"#ff6b35"</span>
+<span class="comment"># Transparent areas become orange</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Batch resize with auto-suffix</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span>
+<span class="comment"># Output: photo-800w.webp</span></pre>
+              </div>
+            </div>
+            
+            <h3 style="margin-top: 2rem;">Advanced Examples</h3>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Generate multiple sizes for srcset</div>
+              <div class="terminal-body">
+                <pre><span class="comment"># Run multiple times with different widths:</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">400</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
+<span class="comment"># Creates: photo-400w.webp, photo-800w.webp, photo-1200w.webp</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Create Open Graph / Twitter card image</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp cover.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--quality</span> <span class="value">90</span> \
+    <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--height</span> <span class="value">630</span> <span class="flag">--background</span> <span class="value">"#ffffff"</span></pre>
+              </div>
+            </div>
+            
+            <div class="terminal-example">
+              <div class="terminal-header">Delete originals after converting (CLI only)</div>
+              <div class="terminal-body">
+                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./converted</span> <span class="flag">--delete-original</span>
+<span class="comment"># ⚠️ Original files are permanently deleted after processing</span></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- When to Use -->
+          <section id="help-when-to-use" class="help-section-page">
+            <h2>When to Use CLI vs UI</h2>
+            
+            <div class="help-cards-grid">
+              <div class="help-card">
+                <h4>Use CLI when:</h4>
+                <ul>
+                  <li>Automating workflows or scripts</li>
+                  <li>Processing large batches from command line</li>
+                  <li>Integrating with other tools</li>
+                  <li>You need to delete original files (CLI only)</li>
+                  <li>You're comfortable with command line</li>
+                </ul>
+              </div>
+              
+              <div class="help-card">
+                <h4>Use UI when:</h4>
+                <ul>
+                  <li>You're new to the tool</li>
+                  <li>You want visual feedback and guidance</li>
+                  <li>You need to understand option combinations</li>
+                  <li>You prefer point-and-click interfaces</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"/>
+      </svg>
+    </button>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Theme toggle
+      const savedTheme = localStorage.getItem('pulp-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+      
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('pulp-theme', newTheme);
+      });
+      
+      // Load version from API (same source as main app)
+      const versionEl = document.getElementById('version');
+      if (versionEl) {
+        // Don't show default version, wait for API
+        versionEl.style.opacity = '0';
+        fetch('/api/version')
+          .then(r => r.json())
+          .then(data => {
+            if (data.version) {
+              versionEl.textContent = `v${data.version}`;
+            }
+            versionEl.style.opacity = '1';
+          })
+          .catch(() => {
+            versionEl.style.opacity = '1';
+          });
+      }
+      
+      // Back to top button
+      const backToTopBtn = document.getElementById('back-to-top');
+      if (backToTopBtn) {
+        const showThreshold = 300;
+        
+        const updateVisibility = () => {
+          if (window.scrollY > showThreshold) {
+            backToTopBtn.classList.add('visible');
+          } else {
+            backToTopBtn.classList.remove('visible');
+          }
+        };
+        
+        window.addEventListener('scroll', updateVisibility, { passive: true });
+        updateVisibility();
+        
+        backToTopBtn.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+      
+      // Active subnav on scroll
+      const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 72;
+      const sections = document.querySelectorAll('.help-section-page');
+      const navLinks = document.querySelectorAll('.help-subnav-link');
+      
+      const updateActiveNav = () => {
+        const scrollPos = window.scrollY + headerHeight + 120;
+        
+        let currentSection = null;
+        sections.forEach(section => {
+          if (section.offsetTop <= scrollPos) {
+            currentSection = section.id;
+          }
+        });
+        
+        if (currentSection) {
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${currentSection}`);
+          });
+        }
+      };
+      
+      window.addEventListener('scroll', updateActiveNav, { passive: true });
+      updateActiveNav();
+    });
+  </script>
+</body>
+</html>

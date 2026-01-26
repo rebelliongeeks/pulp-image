@@ -1,4 +1,13 @@
-// Pulp Image UI - Main Application Logic
+// Pulp Image UI v0.2.0 - Redesigned
+
+// ============================================
+// STATE
+// ============================================
+
+let selectedFiles = [];
+let ignoredFiles = [];
+let processing = false;
+let resolvedOutputPath = null;
 
 // Format information
 const FORMAT_INFO = {
@@ -8,792 +17,727 @@ const FORMAT_INFO = {
   avif: { name: 'AVIF', supportsLossless: true, supportsQuality: true, defaultQuality: 50, supportsTransparency: true }
 };
 
-// State
-let selectedFiles = [];
-let ignoredFiles = []; // Store ignored non-image files
-let ignoredFilesCount = 0; // Track ignored non-image files
-let showIgnoredFiles = false; // Toggle state for showing ignored files
-let processing = false;
-let resolvedOutputPath = null; // Store resolved output path to prevent clearing
+const SUPPORTED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'avif'];
 
-// DOM Elements
-const form = document.getElementById('process-form');
-const inputModeRadios = document.querySelectorAll('input[name="input-mode"]');
-const inputSourceFiles = document.getElementById('input-source-files');
-const inputSourceFolder = document.getElementById('input-source-folder');
-const outputDir = document.getElementById('output-dir');
-const useCustomOutput = document.getElementById('use-custom-output');
-const openResultsFolderBtn = document.getElementById('open-results-folder');
-const openResultsFolderResultsBtn = document.getElementById('open-results-folder-results');
-const formatSelect = document.getElementById('format');
-const widthInput = document.getElementById('width');
-const heightInput = document.getElementById('height');
-const qualitySlider = document.getElementById('quality');
-const qualityValue = document.getElementById('quality-value');
-const losslessToggle = document.getElementById('lossless');
-const alphaModeRadios = document.querySelectorAll('input[name="alpha-mode"]');
-const backgroundColor = document.getElementById('background');
-const backgroundText = document.getElementById('background-text');
-const renamePatternInput = document.getElementById('rename-pattern');
-const suffixInput = document.getElementById('suffix');
-const autoSuffixToggle = document.getElementById('auto-suffix');
-const overwriteCheckbox = document.getElementById('overwrite');
-// Delete original checkbox removed - not available in browser UI due to security restrictions
-const processButton = document.getElementById('process-button');
-const resetButton = document.getElementById('reset-button');
-const inputPreview = document.getElementById('input-preview');
-const fileListSummary = document.getElementById('file-list-summary-text');
-const toggleFileListBtn = document.getElementById('toggle-file-list');
-const fileListDetail = document.getElementById('file-list-detail');
-const toggleIgnoredFilesBtn = document.getElementById('toggle-ignored-files');
-const ignoredFilesList = document.getElementById('ignored-files-list');
-const renamePreview = document.getElementById('rename-preview');
-const suffixPreview = document.getElementById('suffix-preview');
-const autoSuffixPreview = document.getElementById('auto-suffix-preview');
-const resultsSection = document.getElementById('results-section');
-const resultsContent = document.getElementById('results-content');
-const inputHelper = document.getElementById('input-helper');
-const outputDirHelper = document.getElementById('output-dir-helper');
-const openResultsFolderHelper = document.getElementById('open-results-folder-helper');
-const openResultsFolderResultsHelper = document.getElementById('open-results-folder-results-helper');
-const openResultsFolderFallback = document.getElementById('open-results-folder-fallback');
-const openResultsFolderResultsFallback = document.getElementById('open-results-folder-results-fallback');
+// ============================================
+// DOM ELEMENTS
+// ============================================
 
-// Initialize
+const elements = {
+  // Theme
+  themeToggle: document.getElementById('theme-toggle'),
+  
+  // Form
+  form: document.getElementById('process-form'),
+  processBtn: document.getElementById('process-btn'),
+  resetBtn: document.getElementById('reset-btn'),
+  
+  // Drop Zone
+  dropZone: document.getElementById('drop-zone'),
+  inputFiles: document.getElementById('input-files'),
+  inputFolder: document.getElementById('input-folder'),
+  fileListPreview: document.getElementById('file-list-preview'),
+  fileCount: document.getElementById('file-count'),
+  toggleFileList: document.getElementById('toggle-file-list'),
+  fileListItems: document.getElementById('file-list-items'),
+  
+  // Output
+  outputDir: document.getElementById('output-dir'),
+  useCustomOutput: document.getElementById('use-custom-output'),
+  renamePattern: document.getElementById('rename-pattern'),
+  renamePreview: document.getElementById('rename-preview'),
+  autoSuffix: document.getElementById('auto-suffix'),
+  overwrite: document.getElementById('overwrite'),
+  
+  // Format
+  format: document.getElementById('format'),
+  quality: document.getElementById('quality'),
+  qualityValue: document.getElementById('quality-value'),
+  qualityHelper: document.getElementById('quality-helper'),
+  lossless: document.getElementById('lossless'),
+  
+  // Resize
+  width: document.getElementById('width'),
+  height: document.getElementById('height'),
+  
+  // Transparency
+  backgroundColor: document.getElementById('background-color'),
+  backgroundHex: document.getElementById('background-hex'),
+  
+  // Results
+  resultsPanel: document.getElementById('results-panel'),
+  resultsContent: document.getElementById('results-content'),
+  openResultsFolder: document.getElementById('open-results-folder'),
+  
+  // Version
+  version: document.getElementById('version'),
+  updateBanner: document.getElementById('update-banner')
+};
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
 document.addEventListener('DOMContentLoaded', async () => {
-  setupTabs();
-  setupForm();
-  setupValidation();
-  await loadVersion(); // Load version from backend
-  await updateOutputDirectory(); // Initialize output directory
-  await updateUI();
-  checkForUpdates(); // Check for updates (non-blocking)
+  initTheme();
+  initTooltips();
+  initBackToTop();
+  initSidebar();
+  initSections();
+  initSectionFocus();
+  initInputMode();
+  initFileInputs();
+  initDropZone();
+  initForm();
+  await loadVersion();
+  await updateOutputDirectory();
+  checkForUpdates();
 });
 
-// Load version from backend (single source of truth)
-async function loadVersion() {
-  try {
-    const response = await fetch('/api/version');
-    if (response.ok) {
-      const data = await response.json();
-      const versionElement = document.getElementById('version');
-      if (versionElement && data.version) {
-        versionElement.textContent = `v${data.version}`;
-      }
-    } else {
-      console.warn('Failed to load version from server');
-    }
-  } catch (error) {
-    console.warn('Error loading version:', error);
-    // Keep default version display if fetch fails
-  }
-}
+// ============================================
+// BACK TO TOP
+// ============================================
 
-// Tab Switching
-function setupTabs() {
-  const tabButtons = document.querySelectorAll('.tab-button');
-  const tabContents = document.querySelectorAll('.tab-content');
+function initBackToTop() {
+  const btn = document.getElementById('back-to-top');
+  if (!btn) return;
   
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabName = button.dataset.tab;
-      
-      // Update buttons
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      
-      // Update contents
-      tabContents.forEach(content => content.classList.remove('active'));
-      document.getElementById(`${tabName}-tab`).classList.add('active');
+  const showThreshold = 300;
+  
+  const updateVisibility = () => {
+    if (window.scrollY > showThreshold) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  };
+  
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  updateVisibility();
+  
+  btn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
     });
   });
 }
 
-// Form Setup
-function setupForm() {
-  // Input mode switching
-  inputModeRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      const mode = e.target.value;
-      const privacyNotice = document.getElementById('folder-privacy-notice');
+// ============================================
+// TOOLTIPS
+// ============================================
+
+function initTooltips() {
+  const tooltip = document.getElementById('tooltip');
+  if (!tooltip) return;
+  
+  const tooltipElements = document.querySelectorAll('[data-tip]');
+  
+  tooltipElements.forEach(el => {
+    el.addEventListener('mouseenter', (e) => {
+      const text = el.getAttribute('data-tip');
+      if (!text) return;
+      
+      tooltip.textContent = text;
+      tooltip.classList.remove('arrow-left', 'arrow-up');
+      
+      // Position tooltip to the right of the element
+      const rect = el.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      
+      // Show to the right with arrow pointing left
+      let left = rect.right + 12;
+      let top = rect.top + (rect.height / 2) - 20;
+      
+      // Check if tooltip would go off screen to the right
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+      tooltip.classList.add('arrow-left');
+      tooltip.classList.add('visible');
+    });
+    
+    el.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+}
+
+// ============================================
+// THEME (Dark Mode)
+// ============================================
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('pulp-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+  
+  elements.themeToggle?.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('pulp-theme', newTheme);
+  });
+}
+
+// ============================================
+// SIDEBAR NAVIGATION
+// ============================================
+
+function initSidebar() {
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-section]');
+  
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      const sectionId = link.dataset.section;
+      const section = document.getElementById(`section-${sectionId}`);
+      
+      if (section && !link.disabled) {
+        // Update active state
+        sidebarLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        
+        // Expand section if collapsible
+        if (!section.classList.contains('always-open')) {
+          section.classList.add('expanded');
+        }
+        
+        // Highlight the card
+        highlightSection(section);
+        
+        // Scroll to section with offset for header
+        const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 72;
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+        
+        window.scrollTo({
+          top: sectionTop - headerHeight - 16,
+          behavior: 'smooth'
+        });
+      }
+    });
+  });
+}
+
+// ============================================
+// SECTION FOCUS (Highlight when interacting)
+// ============================================
+
+function initSectionFocus() {
+  const sections = document.querySelectorAll('.section-card');
+  
+  sections.forEach(section => {
+    // Track focus within section
+    section.addEventListener('focusin', () => {
+      highlightSection(section);
+    });
+    
+    // Track clicks within section body
+    const body = section.querySelector('.section-body');
+    if (body) {
+      body.addEventListener('click', () => {
+        highlightSection(section);
+      });
+    }
+  });
+}
+
+function highlightSection(section) {
+  // Remove highlight from all sections
+  document.querySelectorAll('.section-card').forEach(s => {
+    s.classList.remove('focused');
+  });
+  
+  // Add highlight to this section (if not the always-open one)
+  if (!section.classList.contains('always-open')) {
+    section.classList.add('focused');
+    
+    // Update sidebar active state
+    const sectionId = section.id.replace('section-', '');
+    updateSidebarActive(sectionId);
+  }
+}
+
+// ============================================
+// COLLAPSIBLE SECTIONS
+// ============================================
+
+function initSections() {
+  const sectionHeaders = document.querySelectorAll('.section-header:not(.no-collapse)');
+  
+  sectionHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const section = header.closest('.section-card');
+      if (!section.classList.contains('always-open')) {
+        const wasExpanded = section.classList.contains('expanded');
+        section.classList.toggle('expanded');
+        
+        // If expanding, highlight the card, sidebar nav item, and scroll into view
+        if (!wasExpanded) {
+          // Highlight this card (removes highlight from others)
+          highlightSection(section);
+          
+          const sectionId = section.id.replace('section-', '');
+          
+          // Update sidebar immediately
+          updateSidebarActive(sectionId);
+          
+          // Scroll section into view after a brief delay for the expand animation
+          setTimeout(() => {
+            scrollSectionIntoView(section);
+          }, 100);
+        } else {
+          // Collapsing - remove highlight from this card
+          section.classList.remove('focused');
+        }
+      }
+    });
+  });
+}
+
+function scrollSectionIntoView(section) {
+  const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 72;
+  const actionBarHeight = 68;
+  const padding = 16;
+  
+  // Wait a frame for the section to fully expand
+  requestAnimationFrame(() => {
+    const rect = section.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const availableHeight = viewportHeight - headerHeight - actionBarHeight - padding * 2;
+    
+    // Check if the whole section fits in the viewport
+    if (rect.height <= availableHeight) {
+      // Section fits - make sure it's fully visible
+      if (rect.top < headerHeight + padding) {
+        // Top is cut off - scroll to show from top
+        window.scrollBy({
+          top: rect.top - headerHeight - padding,
+          behavior: 'smooth'
+        });
+      } else if (rect.bottom > viewportHeight - actionBarHeight - padding) {
+        // Bottom is cut off - scroll to show the whole section
+        const scrollAmount = rect.bottom - (viewportHeight - actionBarHeight - padding);
+        window.scrollBy({
+          top: scrollAmount,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      // Section is taller than viewport - scroll to show the top
+      if (rect.top < headerHeight + padding || rect.top > headerHeight + 100) {
+        window.scrollBy({
+          top: rect.top - headerHeight - padding,
+          behavior: 'smooth'
+        });
+      }
+    }
+  });
+}
+
+function updateSidebarActive(sectionId) {
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-section]');
+  sidebarLinks.forEach(link => {
+    if (link.dataset.section === sectionId) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+// ============================================
+// INPUT MODE (Files/Folder)
+// ============================================
+
+function initInputMode() {
+  const modeButtons = document.querySelectorAll('.input-mode-btn');
+  const privacyNotice = document.getElementById('folder-privacy-notice');
+  
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      
+      // Update button states
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Show/hide inputs and privacy notice
       if (mode === 'files') {
-        inputSourceFiles.style.display = 'block';
-        inputSourceFolder.style.display = 'none';
-        if (privacyNotice) privacyNotice.style.display = 'none';
-        inputHelper.textContent = 'Select one or more image files. Supports PNG, JPG, WebP, AVIF. Multiple files will be processed as a batch.';
+        elements.inputFiles?.classList.remove('hidden');
+        elements.inputFolder?.classList.add('hidden');
+        privacyNotice?.classList.add('hidden');
+        updateDropZoneText('files');
       } else {
-        inputSourceFiles.style.display = 'none';
-        inputSourceFolder.style.display = 'block';
-        if (privacyNotice) privacyNotice.style.display = 'block';
-        inputHelper.textContent = 'Choose a folder containing image files. Folder picker support depends on browser (Chrome/Edge recommended).';
+        elements.inputFiles?.classList.add('hidden');
+        elements.inputFolder?.classList.remove('hidden');
+        privacyNotice?.classList.remove('hidden');
+        updateDropZoneText('folder');
       }
-      // Clear selection when switching modes
+      
+      // Clear selection
       selectedFiles = [];
-      inputSourceFiles.value = '';
-      inputSourceFolder.value = '';
-      updateInputPreview();
-      updateUI().catch(console.error);
+      ignoredFiles = [];
+      if (elements.inputFiles) elements.inputFiles.value = '';
+      if (elements.inputFolder) elements.inputFolder.value = '';
+      updateFileListPreview();
+      updateProcessButton();
     });
   });
+}
+
+function updateDropZoneText(mode) {
+  const textEl = document.getElementById('drop-zone-text');
+  const hintEl = document.getElementById('drop-zone-hint');
   
-  // Supported image formats (matching backend)
-  const SUPPORTED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'avif'];
-  
-  // Filter files to only include supported image formats
-  function filterImageFiles(files) {
-    return Array.from(files).filter(file => {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      return ext && SUPPORTED_IMAGE_EXTENSIONS.includes(ext);
-    });
-  }
-  
-  // File input
-  inputSourceFiles.addEventListener('change', (e) => {
-    const allFiles = Array.from(e.target.files);
-    selectedFiles = filterImageFiles(allFiles);
-    ignoredFiles = Array.from(allFiles).filter(file => !selectedFiles.includes(file));
-    ignoredFilesCount = ignoredFiles.length;
-    if (ignoredFilesCount > 0) {
-      console.log(`Ignored ${ignoredFilesCount} non-image file(s)`);
-    }
-    updateInputPreview();
-    updateUI().catch(console.error);
-  });
-  
-  // Folder input
-  inputSourceFolder.addEventListener('change', (e) => {
-    const allFiles = Array.from(e.target.files);
-    selectedFiles = filterImageFiles(allFiles);
-    ignoredFiles = Array.from(allFiles).filter(file => !selectedFiles.includes(file));
-    ignoredFilesCount = ignoredFiles.length;
-    if (ignoredFilesCount > 0) {
-      console.log(`Ignored ${ignoredFilesCount} non-image file(s)`);
-    }
-    updateInputPreview();
-    updateUI().catch(console.error);
-  });
-  
-  // Toggle ignored files
-  if (toggleIgnoredFilesBtn) {
-    toggleIgnoredFilesBtn.addEventListener('click', () => {
-      showIgnoredFiles = !showIgnoredFiles;
-      updateInputPreview();
-    });
-  }
-  
-  // Custom output directory toggle
-  useCustomOutput.addEventListener('change', async () => {
-    if (useCustomOutput.checked) {
-      outputDir.readOnly = false;
-      outputDir.style.background = 'white';
-      outputDirHelper.textContent = 'Use ~ as a shortcut for your home folder (e.g., ~/my-images), or enter a full path.';
-      await validateCustomOutputPath();
-    } else {
-      outputDir.readOnly = true;
-      outputDir.style.background = '';
-      await updateOutputDirectory();
-      outputDirHelper.textContent = 'Files will be saved in a new folder inside your home directory.';
-    }
-  });
-  
-  // Validate custom output path on input and update resolvedOutputPath
-  outputDir.addEventListener('blur', async () => {
-    if (useCustomOutput.checked) {
-      await validateCustomOutputPath();
-      // Update resolvedOutputPath with the custom value
-      resolvedOutputPath = outputDir.value;
-    }
-  });
-  
-  // Open results folder button (near output directory) - with null check
-  if (openResultsFolderBtn) {
-    openResultsFolderBtn.addEventListener('click', async (e) => {
-      // Prevent clicks when disabled
-      if (e.target.disabled === true) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      const outputPath = outputDir ? outputDir.value : null;
-      if (outputPath) {
-        await openResultsFolder(outputPath, 'output');
-      }
-    });
+  if (mode === 'folder') {
+    if (textEl) textEl.innerHTML = '<strong>Click to select a folder</strong>';
+    if (hintEl) hintEl.textContent = 'All images in the folder will be processed';
   } else {
-    console.warn('open-results-folder button not found in DOM');
+    if (textEl) textEl.innerHTML = '<strong>Drop images here</strong> or click to browse';
+    if (hintEl) hintEl.textContent = 'Supports PNG, JPG, WebP, AVIF';
   }
+}
+
+function initFileInputs() {
+  // File input change handlers
+  elements.inputFiles?.addEventListener('change', handleFileSelect);
+  elements.inputFolder?.addEventListener('change', handleFileSelect);
   
-  // Open results folder button (near results) - with null check
-  if (openResultsFolderResultsBtn) {
-    openResultsFolderResultsBtn.addEventListener('click', async (e) => {
-      // Prevent clicks when disabled
-      if (e.target.disabled === true) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      const outputPath = outputDir ? outputDir.value : null;
-      if (outputPath) {
-        await openResultsFolder(outputPath, 'results');
+  // Toggle file list
+  elements.toggleFileList?.addEventListener('click', () => {
+    const items = elements.fileListItems;
+    const isExpanded = items?.classList.contains('expanded');
+    items?.classList.toggle('expanded');
+    if (elements.toggleFileList) {
+      elements.toggleFileList.textContent = isExpanded ? 'Show files' : 'Hide files';
+    }
+  });
+}
+
+// ============================================
+// DROP ZONE
+// ============================================
+
+function initDropZone() {
+  const dropZone = elements.dropZone;
+  if (!dropZone) return;
+  
+  // Drag events
+  ['dragenter', 'dragover'].forEach(event => {
+    dropZone.addEventListener(event, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isFolderMode = elements.inputFolder && !elements.inputFolder.classList.contains('hidden');
+      // Only show drag feedback in files mode (folder mode requires click)
+      if (!isFolderMode) {
+        dropZone.classList.add('drag-over');
       }
     });
-  } else {
-    console.warn('open-results-folder-results button not found in DOM');
-  }
+  });
   
-  // Helper function to open results folder
-  async function openResultsFolder(path, buttonLocation = 'output') {
-    // Hide any previous fallback messages
-    if (openResultsFolderFallback) {
-      openResultsFolderFallback.style.display = 'none';
-    }
-    if (openResultsFolderResultsFallback) {
-      openResultsFolderResultsFallback.style.display = 'none';
+  ['dragleave'].forEach(event => {
+    dropZone.addEventListener(event, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+  
+  // Handle drop
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('drag-over');
+    
+    const isFolderMode = elements.inputFolder && !elements.inputFolder.classList.contains('hidden');
+    
+    // In folder mode, don't handle drops (user must click to select folder via browser dialog)
+    if (isFolderMode) {
+      return;
     }
     
-    try {
-      const response = await fetch('/api/open-folder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: path })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        // Show friendly fallback message with path
-        const fallbackElement = buttonLocation === 'results' ? openResultsFolderResultsFallback : openResultsFolderFallback;
-        const messageElement = fallbackElement?.querySelector('.folder-open-fallback-message');
-        const pathElement = fallbackElement?.querySelector('.folder-open-fallback-path');
-        
-        if (fallbackElement && messageElement && pathElement) {
-          messageElement.textContent = 'We couldn\'t open the results folder automatically on this system.\nYou can open it manually using the path below.';
-          pathElement.textContent = errorData.path || path || 'Path not available';
-          fallbackElement.style.display = 'block';
-        }
-        return; // Don't throw - this is expected behavior
-      }
-      
-      // Success - ensure fallback is hidden
-      if (openResultsFolderFallback) {
-        openResultsFolderFallback.style.display = 'none';
-      }
-      if (openResultsFolderResultsFallback) {
-        openResultsFolderResultsFallback.style.display = 'none';
-      }
-    } catch (error) {
-      // Network or other errors - show fallback with path
-      const fallbackElement = buttonLocation === 'results' ? openResultsFolderResultsFallback : openResultsFolderFallback;
-      const messageElement = fallbackElement?.querySelector('.folder-open-fallback-message');
-      const pathElement = fallbackElement?.querySelector('.folder-open-fallback-path');
-      
-      if (fallbackElement && messageElement && pathElement) {
-        messageElement.textContent = 'We couldn\'t open the results folder automatically on this system.\nYou can open it manually using the path below.';
-        pathElement.textContent = path || 'Path not available';
-        fallbackElement.style.display = 'block';
-      }
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      processDroppedFiles(Array.from(files));
     }
-  }
-  
-  // Rename pattern input
-  renamePatternInput.addEventListener('input', () => {
-    updateRenamePreview();
+  });
+}
+
+function processDroppedFiles(files) {
+  selectedFiles = files.filter(file => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    return ext && SUPPORTED_EXTENSIONS.includes(ext);
   });
   
-  // Format change - triggers rename preview update
-  formatSelect.addEventListener('change', () => {
+  ignoredFiles = files.filter(file => !selectedFiles.includes(file));
+  
+  updateFileListPreview();
+  updateProcessButton();
+}
+
+function handleFileSelect(e) {
+  const allFiles = Array.from(e.target.files);
+  
+  selectedFiles = allFiles.filter(file => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    return ext && SUPPORTED_EXTENSIONS.includes(ext);
+  });
+  
+  ignoredFiles = allFiles.filter(file => !selectedFiles.includes(file));
+  
+  updateFileListPreview();
+  updateProcessButton();
+}
+
+function updateFileListPreview() {
+  if (selectedFiles.length === 0) {
+    elements.fileListPreview?.classList.add('hidden');
+    return;
+  }
+  
+  elements.fileListPreview?.classList.remove('hidden');
+  
+  // Update count
+  let countText = `${selectedFiles.length} image${selectedFiles.length === 1 ? '' : 's'} selected`;
+  if (ignoredFiles.length > 0) {
+    countText += ` (${ignoredFiles.length} ignored)`;
+  }
+  if (elements.fileCount) elements.fileCount.textContent = countText;
+  
+  // Build file list
+  if (elements.fileListItems) {
+    elements.fileListItems.innerHTML = selectedFiles.map(file => `
+      <div class="file-list-item">
+        <span class="file-list-name">${escapeHtml(file.name)}</span>
+        <span class="file-list-size">${formatBytes(file.size)}</span>
+      </div>
+    `).join('');
+  }
+  
+  // Update rename preview
+  updateRenamePreview();
+}
+
+// ============================================
+// FORM HANDLING
+// ============================================
+
+function initForm() {
+  // Custom output toggle
+  elements.useCustomOutput?.addEventListener('change', async () => {
+    if (elements.useCustomOutput.checked) {
+      if (elements.outputDir) {
+        elements.outputDir.readOnly = false;
+        elements.outputDir.placeholder = '~/my-images or /full/path';
+      }
+    } else {
+      if (elements.outputDir) {
+        elements.outputDir.readOnly = true;
+      }
+      await updateOutputDirectory();
+    }
+  });
+  
+  // Format change
+  elements.format?.addEventListener('change', () => {
     updateFormatDependencies();
     updateRenamePreview();
-    updateUI().catch(console.error);
   });
   
   // Quality slider
-  qualitySlider.addEventListener('input', (e) => {
-    qualityValue.textContent = e.target.value;
+  elements.quality?.addEventListener('input', () => {
+    if (elements.qualityValue) {
+      elements.qualityValue.textContent = elements.quality.value;
+    }
   });
   
   // Lossless toggle
-  losslessToggle.addEventListener('change', () => {
-    updateFormatDependencies();
-  });
+  elements.lossless?.addEventListener('change', updateFormatDependencies);
   
-  // Background color
-  backgroundColor.addEventListener('input', (e) => {
-    backgroundText.value = e.target.value;
-  });
+  // Rename pattern
+  elements.renamePattern?.addEventListener('input', updateRenamePreview);
   
-  backgroundText.addEventListener('input', (e) => {
-    if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-      backgroundColor.value = e.target.value;
+  // Color picker sync
+  elements.backgroundColor?.addEventListener('input', () => {
+    if (elements.backgroundHex) {
+      elements.backgroundHex.value = elements.backgroundColor.value;
     }
   });
   
-  // Suffix inputs
-  suffixInput.addEventListener('input', updateSuffixPreview);
-  autoSuffixToggle.addEventListener('change', updateSuffixPreview);
-  widthInput.addEventListener('input', updateSuffixPreview);
-  heightInput.addEventListener('input', updateSuffixPreview);
-  formatSelect.addEventListener('change', () => {
-    updateFormatDependencies();
-    updateSuffixPreview();
-    updateRenamePreview(); // Update rename preview when format changes
-    updateUI().catch(console.error);
-  });
-  
-  // Warnings
-  overwriteCheckbox.addEventListener('change', () => {
-    document.getElementById('overwrite-warning').style.display = 
-      overwriteCheckbox.checked ? 'block' : 'none';
-  });
-  
-  // Delete original checkbox removed - not available in browser UI
-  
-  // Form submission
-  form.addEventListener('submit', handleSubmit);
+  // Form submit
+  elements.form?.addEventListener('submit', handleSubmit);
   
   // Reset button
-  resetButton.addEventListener('click', resetForm);
-}
-
-// Validation Setup
-function setupValidation() {
-  // Real-time validation
-  const inputs = form.querySelectorAll('input, select');
-  inputs.forEach(input => {
-    input.addEventListener('blur', validateForm);
-    input.addEventListener('input', validateForm);
+  elements.resetBtn?.addEventListener('click', resetForm);
+  
+  // Open results folder
+  elements.openResultsFolder?.addEventListener('click', () => {
+    const path = elements.outputDir?.value;
+    if (path) openFolder(path);
   });
 }
 
-// Update Format Dependencies
 function updateFormatDependencies() {
-  const format = formatSelect.value;
+  const format = elements.format?.value;
   const formatInfo = format ? FORMAT_INFO[format] : null;
-  
-  // Update quality slider
-  if (formatInfo) {
-    if (formatInfo.supportsQuality && !losslessToggle.checked) {
-      qualitySlider.disabled = false;
-      if (formatInfo.defaultQuality && qualitySlider.value === '80') {
-        qualitySlider.value = formatInfo.defaultQuality;
-        qualityValue.textContent = formatInfo.defaultQuality;
-      }
-    } else {
-      qualitySlider.disabled = true;
-    }
-    
-    // Update lossless toggle
-    if (formatInfo.supportsLossless) {
-      losslessToggle.disabled = false;
-    } else {
-      losslessToggle.disabled = true;
-      losslessToggle.checked = false;
-    }
-  } else {
-    qualitySlider.disabled = false;
-    losslessToggle.disabled = false;
-  }
-  
-  // Update helper texts
-  updateHelperTexts();
-}
-
-// Update Helper Texts
-function updateHelperTexts() {
-  const format = formatSelect.value;
-  const formatInfo = format ? FORMAT_INFO[format] : null;
-  const formatHelper = document.getElementById('format-helper');
-  const qualityHelper = document.getElementById('quality-helper');
-  const losslessHelper = document.getElementById('lossless-helper');
+  const isLossless = elements.lossless?.checked;
   
   if (formatInfo) {
-    formatHelper.textContent = `${formatInfo.name}: ${formatInfo.supportsTransparency ? 'Supports transparency' : 'No transparency support'}. ${formatInfo.supportsLossless ? 'Supports lossless' : 'Lossy only'}.`;
-    
-    if (losslessToggle.checked && formatInfo.supportsLossless) {
-      qualityHelper.textContent = 'Quality is disabled when lossless compression is enabled.';
-    } else if (formatInfo.supportsQuality) {
-      qualityHelper.textContent = `Quality for ${formatInfo.name} (1-100). Default: ${formatInfo.defaultQuality}. Higher = better quality but larger file.`;
-    } else {
-      qualityHelper.textContent = `${formatInfo.name} is always lossless (no quality setting).`;
+    // Quality slider
+    if (elements.quality) {
+      elements.quality.disabled = !formatInfo.supportsQuality || isLossless;
     }
     
-    if (formatInfo.supportsLossless) {
-      losslessHelper.textContent = `Use lossless compression for ${formatInfo.name}. When enabled, quality setting is ignored.`;
-    } else {
-      losslessHelper.textContent = `${formatInfo.name} does not support lossless compression.`;
-    }
-  } else {
-    formatHelper.textContent = 'Select output format or keep original.';
-    qualityHelper.textContent = 'Quality for lossy formats (1-100). Defaults: JPG=80, WebP=80, AVIF=50.';
-    losslessHelper.textContent = 'Use lossless compression where supported (PNG, WebP, AVIF). PNG is always lossless.';
-  }
-}
-
-// Update Input Preview
-function updateInputPreview() {
-  if (selectedFiles.length === 0 && ignoredFilesCount === 0) {
-    fileListSummary.textContent = 'No files selected';
-    toggleFileListBtn.style.display = 'none';
-    fileListDetail.style.display = 'none';
-    if (toggleIgnoredFilesBtn) toggleIgnoredFilesBtn.style.display = 'none';
-    if (ignoredFilesList) ignoredFilesList.style.display = 'none';
-    return;
-  }
-  
-  // Update summary - show filtered count and ignored count if any
-  const filteredCount = selectedFiles.length;
-  let summaryText = `${filteredCount} image file${filteredCount === 1 ? '' : 's'} selected`;
-  if (ignoredFilesCount > 0) {
-    summaryText += ` (${ignoredFilesCount} non-image ${ignoredFilesCount === 1 ? 'file' : 'files'} ignored)`;
-  }
-  fileListSummary.textContent = summaryText;
-  
-  // Always show toggle button (even for single file)
-  toggleFileListBtn.style.display = 'inline-block';
-  toggleFileListBtn.textContent = fileListDetail.style.display === 'none' ? 'Show files' : 'Hide files';
-  
-  // Update file list detail - always render list (only filtered image files)
-  fileListDetail.innerHTML = '';
-  selectedFiles.forEach((file, index) => {
-    const item = document.createElement('div');
-    item.className = 'file-list-item';
-    const size = file.size ? formatBytes(file.size) : 'Unknown size';
-    item.innerHTML = `
-      <span class="file-list-item-name">${escapeHtml(file.name)}</span>
-      <span class="file-list-item-size">${size}</span>
-    `;
-    fileListDetail.appendChild(item);
-  });
-  
-  // Update ignored files section
-  if (ignoredFilesCount > 0 && toggleIgnoredFilesBtn && ignoredFilesList) {
-    toggleIgnoredFilesBtn.style.display = 'inline-block';
-    toggleIgnoredFilesBtn.textContent = showIgnoredFiles ? 'Hide ignored files' : 'Show ignored files';
-    
-    if (showIgnoredFiles) {
-      ignoredFilesList.style.display = 'block';
-      ignoredFilesList.innerHTML = '';
-      ignoredFiles.forEach((file) => {
-        const item = document.createElement('div');
-        item.className = 'file-list-item ignored-file';
-        item.innerHTML = `
-          <span class="file-list-item-name">${escapeHtml(file.name)}</span>
-          <span class="file-list-item-badge">Ignored</span>
-        `;
-        ignoredFilesList.appendChild(item);
-      });
-    } else {
-      ignoredFilesList.style.display = 'none';
-    }
-  } else {
-    if (toggleIgnoredFilesBtn) toggleIgnoredFilesBtn.style.display = 'none';
-    if (ignoredFilesList) ignoredFilesList.style.display = 'none';
-  }
-}
-
-// Toggle file list
-toggleFileListBtn.addEventListener('click', () => {
-  if (fileListDetail.style.display === 'none') {
-    fileListDetail.style.display = 'block';
-    toggleFileListBtn.textContent = 'Hide files';
-  } else {
-    fileListDetail.style.display = 'none';
-    toggleFileListBtn.textContent = 'Show files';
-  }
-});
-
-// Update Output Directory
-async function updateOutputDirectory() {
-  // Don't update if we're processing or if path is already resolved
-  if (processing) {
-    return;
-  }
-  
-  // Don't update if outputDir element is missing
-  if (!outputDir) {
-    console.warn('output-dir element not found in DOM');
-    return;
-  }
-  
-  if (!useCustomOutput || !useCustomOutput.checked) {
-    // Generate default path: ~/pulp-image-results/YYYY-MM-DD_HH-mm-ss
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-    
-    // Get resolved path from server
-    try {
-      const response = await fetch('/api/resolve-output-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          useDefault: true,
-          timestamp: timestamp
-        })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        resolvedOutputPath = data.path;
-        outputDir.value = data.path;
-      } else {
-        // Fallback to placeholder if server call fails
-        const fallbackPath = `~/pulp-image-results/${timestamp}`;
-        resolvedOutputPath = fallbackPath;
-        outputDir.value = fallbackPath;
-      }
-    } catch (error) {
-      // Fallback to placeholder if server call fails
-      const fallbackPath = `~/pulp-image-results/${timestamp}`;
-      resolvedOutputPath = fallbackPath;
-      outputDir.value = fallbackPath;
-    }
-    openResultsFolderBtn.style.display = 'none'; // Will show after processing
-  } else if (outputDir.value) {
-    // Validate custom path exists
-    await validateCustomOutputPath();
-    // Store custom path
-    resolvedOutputPath = outputDir.value;
-  }
-}
-
-// Validate custom output directory
-async function validateCustomOutputPath() {
-  const customPath = outputDir.value.trim();
-  if (!customPath) return;
-  
-  try {
-    const response = await fetch('/api/validate-output-path', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: customPath })
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (!data.exists && !data.willCreate) {
-        // Show friendly message
-        const helper = document.getElementById('output-dir-helper');
-        if (helper) {
-          helper.textContent = 'Directory does not exist. It will be created.';
-          helper.style.color = 'var(--text-secondary)';
-        }
-      } else {
-        const helper = document.getElementById('output-dir-helper');
-        if (helper) {
-          helper.textContent = useCustomOutput.checked 
-            ? 'Use ~ as a shortcut for your home folder (e.g., ~/my-images), or enter a full path.'
-            : 'Files will be saved in a new folder inside your home directory.';
-        }
+    // Lossless toggle
+    if (elements.lossless) {
+      elements.lossless.disabled = !formatInfo.supportsLossless;
+      if (!formatInfo.supportsLossless) {
+        elements.lossless.checked = false;
       }
     }
-  } catch (error) {
-    // Silently fail validation
+    
+    // Update helper
+    if (elements.qualityHelper) {
+      if (isLossless && formatInfo.supportsLossless) {
+        elements.qualityHelper.textContent = 'Quality disabled in lossless mode.';
+      } else if (formatInfo.supportsQuality) {
+        elements.qualityHelper.textContent = `Lower = smaller file, less quality. Higher = larger file, better quality. Default for ${formatInfo.name}: ${formatInfo.defaultQuality}.`;
+      } else {
+        elements.qualityHelper.textContent = `${formatInfo.name} is always lossless, quality setting does not apply.`;
+      }
+    }
+  } else {
+    if (elements.quality) elements.quality.disabled = false;
+    if (elements.lossless) elements.lossless.disabled = false;
+    if (elements.qualityHelper) {
+      elements.qualityHelper.textContent = 'Lower = smaller file, less quality. Higher = larger file, better quality. For JPG, WebP, AVIF.';
+    }
   }
 }
 
-// Update Rename Preview
 function updateRenamePreview() {
-  if (!renamePreview) {
-    return; // Element not found, skip silently
-  }
+  const pattern = elements.renamePattern?.value.trim();
   
-  const pattern = renamePatternInput ? renamePatternInput.value.trim() : '';
-  
-  // Show placeholder if no pattern or no files
-  if (!pattern) {
-    renamePreview.style.display = 'none';
+  if (!pattern || selectedFiles.length === 0) {
+    if (elements.renamePreview) elements.renamePreview.textContent = '';
     return;
   }
   
-  if (selectedFiles.length === 0) {
-    renamePreview.textContent = 'Preview: (select files to see preview)';
-    renamePreview.style.display = 'block';
-    return;
-  }
-  
-  // Get first file for preview
   const firstFile = selectedFiles[0];
   const nameWithoutExt = firstFile.name.replace(/\.[^/.]+$/, '');
+  const format = elements.format?.value;
+  const ext = format || firstFile.name.split('.').pop() || 'png';
   
-  // Get output extension - use format if set, otherwise keep original extension
-  let ext = '';
-  if (formatSelect && formatSelect.value) {
-    ext = formatSelect.value;
-  } else {
-    const fileExt = firstFile.name.split('.').pop();
-    ext = fileExt || 'png';
-  }
-  
-  // Build preview using tokens
   let preview = pattern
     .replace(/{name}/g, nameWithoutExt)
     .replace(/{ext}/g, ext)
     .replace(/{index}/g, '1');
   
-  // Ensure extension is included if pattern doesn't have one
   if (!preview.includes('.')) {
     preview += `.${ext}`;
   }
   
-  renamePreview.textContent = `Preview (first file): ${preview}`;
-  renamePreview.style.display = 'block';
+  if (elements.renamePreview) {
+    elements.renamePreview.textContent = `Preview: ${preview}`;
+  }
 }
 
-// Update Suffix Preview
-function updateSuffixPreview() {
-  const suffix = suffixInput.value.trim();
-  const autoSuffix = autoSuffixToggle.checked;
-  const width = widthInput.value;
-  const height = heightInput.value;
-  const format = formatSelect.value;
+function updateProcessButton() {
+  if (elements.processBtn) {
+    elements.processBtn.disabled = selectedFiles.length === 0 || processing;
+  }
+}
+
+// ============================================
+// OUTPUT DIRECTORY
+// ============================================
+
+async function updateOutputDirectory() {
+  if (processing || elements.useCustomOutput?.checked) return;
   
-  // Build preview filename
-  let preview = 'example';
+  const now = new Date();
+  const timestamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+    '_',
+    String(now.getHours()).padStart(2, '0'),
+    '-',
+    String(now.getMinutes()).padStart(2, '0'),
+    '-',
+    String(now.getSeconds()).padStart(2, '0')
+  ].join('');
   
-  // Auto suffix
-  if (autoSuffix) {
-    const suffixParts = [];
-    if (width && height) {
-      suffixParts.push(`${width}x${height}`);
-    } else if (width) {
-      suffixParts.push(`${width}w`);
-    } else if (height) {
-      suffixParts.push(`${height}h`);
+  try {
+    const response = await fetch('/api/resolve-output-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ useDefault: true, timestamp })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      resolvedOutputPath = data.path;
+      if (elements.outputDir) elements.outputDir.value = data.path;
     }
-    if (suffixParts.length > 0) {
-      preview += `-${suffixParts.join('-')}`;
-    }
-  }
-  
-  // Custom suffix
-  if (suffix) {
-    preview += `-${suffix}`;
-  }
-  
-  // Extension
-  const ext = format || 'png';
-  preview += `.${ext}`;
-  
-  if (autoSuffix || suffix) {
-    suffixPreview.textContent = `Preview: ${preview}`;
-    suffixPreview.style.display = 'block';
-  } else {
-    suffixPreview.style.display = 'none';
-  }
-  
-  if (autoSuffix) {
-    autoSuffixPreview.textContent = `Auto suffix will add: ${width && height ? `${width}x${height}` : width ? `${width}w` : height ? `${height}h` : 'size'}`;
-    autoSuffixPreview.style.display = 'block';
-  } else {
-    autoSuffixPreview.style.display = 'none';
+  } catch (error) {
+    console.warn('Failed to resolve output path:', error);
+    const fallback = `~/pulp-image-results/${timestamp}`;
+    resolvedOutputPath = fallback;
+    if (elements.outputDir) elements.outputDir.value = fallback;
   }
 }
 
-// Update UI State
-async function updateUI() {
-  updateFormatDependencies();
-  updateSuffixPreview();
-  updateRenamePreview();
-  if (!useCustomOutput.checked && !processing) {
-    await updateOutputDirectory();
-  }
-  validateForm();
-}
+// ============================================
+// FORM SUBMISSION
+// ============================================
 
-// Validate Form
-function validateForm() {
-  const hasInput = selectedFiles.length > 0;
-  const isValid = hasInput;
-  
-  processButton.disabled = !isValid || processing;
-  
-  return isValid;
-}
-
-// Handle Form Submit
 async function handleSubmit(e) {
   e.preventDefault();
   
-  // Prevent submission if button is disabled
-  if (processButton && processButton.disabled === true) {
-    e.preventDefault();
-    e.stopPropagation();
-    return;
-  }
-  
-  // Prevent double submission
-  if (processing) {
-    console.warn('Processing already in progress');
-    return;
-  }
-  
-  // Validate files selected
-  if (!selectedFiles || selectedFiles.length === 0) {
-    alert('Error: Please select at least one image file to process.');
-    return;
-  }
-  
-  // Validate output directory before processing
-  // When custom output is enabled, always use the current input value
-  let outputPath;
-  if (useCustomOutput && useCustomOutput.checked) {
-    outputPath = outputDir ? outputDir.value : null;
-  } else {
-    outputPath = resolvedOutputPath || (outputDir ? outputDir.value : null);
-  }
-  if (!outputPath || outputPath.trim() === '') {
-    alert('Error: Output directory is not set. Please wait for the directory path to be resolved, or specify a custom output directory.');
-    return;
-  }
-  
-  // Validate form
-  if (!validateForm()) {
-    alert('Error: Please check your form inputs and try again.');
-    return;
-  }
+  if (processing || selectedFiles.length === 0) return;
   
   processing = true;
-  if (processButton) {
-    processButton.disabled = true;
-    processButton.textContent = 'Processing...';
-  }
-  if (resultsSection) {
-    resultsSection.style.display = 'none';
+  updateProcessButton();
+  if (elements.processBtn) {
+    elements.processBtn.innerHTML = `
+      <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+        <circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="20"/>
+      </svg>
+      Processing...
+    `;
   }
   
+  // Hide previous results
+  elements.resultsPanel?.classList.remove('visible');
+  
   try {
-    // Use stored resolved path or current value
-    // Note: ~ expansion is handled by the server
+    const outputPath = elements.useCustomOutput?.checked 
+      ? elements.outputDir?.value 
+      : resolvedOutputPath || elements.outputDir?.value;
+    
+    if (!outputPath) {
+      throw new Error('Output directory not set');
+    }
     
     const config = {
-      width: widthInput.value ? parseInt(widthInput.value, 10) : null,
-      height: heightInput.value ? parseInt(heightInput.value, 10) : null,
-      format: formatSelect.value || null,
+      width: elements.width?.value ? parseInt(elements.width.value, 10) : null,
+      height: elements.height?.value ? parseInt(elements.height.value, 10) : null,
+      format: elements.format?.value || null,
       out: outputPath,
-      renamePattern: renamePatternInput.value.trim() || null,
-      suffix: suffixInput.value.trim() || null,
-      autoSuffix: autoSuffixToggle.checked,
-      quality: qualitySlider.disabled ? null : parseInt(qualitySlider.value, 10),
-      lossless: losslessToggle.checked,
-      background: backgroundColor.value,
-      alphaMode: document.querySelector('input[name="alpha-mode"]:checked').value,
-      overwrite: overwriteCheckbox.checked,
-      deleteOriginal: false, // Always false in UI mode - browser security prevents file deletion
-      useDefaultOutput: !useCustomOutput.checked
+      renamePattern: elements.renamePattern?.value.trim() || null,
+      autoSuffix: elements.autoSuffix?.checked || false,
+      quality: elements.quality?.disabled ? null : parseInt(elements.quality?.value || '80', 10),
+      lossless: elements.lossless?.checked || false,
+      background: elements.backgroundColor?.value || '#ffffff',
+      alphaMode: document.querySelector('input[name="alpha-mode"]:checked')?.value || 'flatten',
+      overwrite: elements.overwrite?.checked || false,
+      useDefaultOutput: !elements.useCustomOutput?.checked
     };
     
-    // Prepare file data
-    // Files are sent to server for local processing (no internet upload)
-    
     const formData = new FormData();
-    selectedFiles.forEach(file => {
-      formData.append('files', file);
-    });
-    
-    // Add config as JSON
+    selectedFiles.forEach(file => formData.append('files', file));
     formData.append('config', JSON.stringify(config));
     
     const response = await fetch('/api/run', {
@@ -802,246 +746,269 @@ async function handleSubmit(e) {
     });
     
     if (!response.ok) {
-      let errorMessage = 'Processing failed';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
     }
     
     const results = await response.json();
     
-    // Update output directory with resolved path
-    // Only update if NOT using custom output (to preserve user's custom path)
-    if (results.outputPath && !useCustomOutput.checked) {
-      if (outputDir) {
-        outputDir.value = results.outputPath;
-      }
-      resolvedOutputPath = results.outputPath; // Keep it stable
+    // Update output path if returned
+    if (results.outputPath && !elements.useCustomOutput?.checked) {
+      if (elements.outputDir) elements.outputDir.value = results.outputPath;
+      resolvedOutputPath = results.outputPath;
     }
     
     displayResults(results);
     
-    // Hide any fallback messages from previous attempts
-    if (openResultsFolderFallback) {
-      openResultsFolderFallback.style.display = 'none';
-    }
-    if (openResultsFolderResultsFallback) {
-      openResultsFolderResultsFallback.style.display = 'none';
-    }
-    
-    // Enable/disable "Open results folder" buttons based on whether any files were processed
-    const hasProcessedFiles = results.processed && results.processed.length > 0;
-    const explanationText = 'No output files were created.\nFix the errors above and process again to enable this action.';
-    
-    if (openResultsFolderBtn) {
-      if (hasProcessedFiles) {
-        openResultsFolderBtn.style.display = 'inline-block';
-        openResultsFolderBtn.disabled = false;
-        if (openResultsFolderHelper) {
-          openResultsFolderHelper.style.display = 'none';
-        }
-      } else {
-        openResultsFolderBtn.style.display = 'inline-block';
-        openResultsFolderBtn.disabled = true;
-        if (openResultsFolderHelper) {
-          openResultsFolderHelper.textContent = explanationText;
-          openResultsFolderHelper.style.display = 'block';
-        }
-      }
-    }
-    if (openResultsFolderResultsBtn) {
-      if (hasProcessedFiles) {
-        openResultsFolderResultsBtn.style.display = 'inline-block';
-        openResultsFolderResultsBtn.disabled = false;
-        if (openResultsFolderResultsHelper) {
-          openResultsFolderResultsHelper.style.display = 'none';
-        }
-      } else {
-        openResultsFolderResultsBtn.style.display = 'inline-block';
-        openResultsFolderResultsBtn.disabled = true;
-        if (openResultsFolderResultsHelper) {
-          openResultsFolderResultsHelper.textContent = explanationText;
-          openResultsFolderResultsHelper.style.display = 'block';
-        }
-      }
-    }
-    
   } catch (error) {
     console.error('Processing error:', error);
-    // Sanitize error message for UI
-    const rawError = error.message || 'An unexpected error occurred during processing.';
-    const sanitizedError = sanitizeErrorMessage(rawError);
-    alert(`Error: ${sanitizedError}`);
-    
-    // Show error in results section if available
-    if (resultsSection && resultsContent) {
-      resultsContent.innerHTML = `
-        <div class="result-item error">
-          <div class="result-item-header">
-            <div class="result-item-title">Processing Failed</div>
-            <div class="result-item-status error">Error</div>
-          </div>
-          <div class="result-item-details">
-            <div class="result-detail">${escapeHtml(sanitizedError)}</div>
-          </div>
-        </div>
-      `;
-      resultsSection.style.display = 'block';
-    }
+    alert(`Error: ${sanitizeError(error.message)}`);
   } finally {
     processing = false;
-    if (processButton) {
-      processButton.disabled = false;
-      processButton.textContent = 'Process Images';
+    updateProcessButton();
+    if (elements.processBtn) {
+      elements.processBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Process Images
+      `;
     }
-    // Do NOT reset resolvedOutputPath here - keep it stable for subsequent runs
   }
 }
 
-// Display Results
+// ============================================
+// RESULTS DISPLAY
+// ============================================
+
 function displayResults(results) {
-  resultsContent.innerHTML = '';
+  if (!elements.resultsContent) return;
+  
+  let html = '';
   
   // Per-file results
-  if (results.processed && results.processed.length > 0) {
+  if (results.processed?.length > 0) {
     results.processed.forEach(result => {
-      const item = createResultItem(result, 'success');
-      resultsContent.appendChild(item);
+      const sizeChange = result.finalSize - result.originalSize;
+      const percentChange = result.originalSize > 0 
+        ? ((sizeChange / result.originalSize) * 100).toFixed(1)
+        : '0';
+      const changeText = sizeChange >= 0 ? `+${percentChange}%` : `${percentChange}%`;
+      const changeClass = sizeChange > 0 ? 'text-warning' : sizeChange < 0 ? 'text-success' : '';
+      
+      html += `
+        <div class="result-item success">
+          <div class="result-item-header">
+            <span class="result-item-name">${escapeHtml(extractFilename(result.outputPath))}</span>
+            <span class="result-item-status success">Done</span>
+          </div>
+          <div class="result-item-details">
+            <span class="result-item-detail"><strong>Size:</strong> ${formatBytes(result.originalSize)} → ${formatBytes(result.finalSize)} <span class="${changeClass}">(${changeText})</span></span>
+            <span class="result-item-detail"><strong>Dimensions:</strong> ${result.metadata?.width || '?'}×${result.metadata?.height || '?'}</span>
+          </div>
+        </div>
+      `;
     });
   }
   
-  if (results.skipped && results.skipped.length > 0) {
-    results.skipped.forEach(skipped => {
-      const item = document.createElement('div');
-      item.className = 'result-item';
-      const fileName = extractFileName(skipped.filePath);
-      const sanitizedReason = sanitizeErrorMessage(skipped.reason);
-      item.innerHTML = `
-        <div class="result-item-header">
-          <div class="result-item-title">${escapeHtml(fileName)}</div>
-          <div class="result-item-status">Skipped</div>
-        </div>
-        <div class="result-item-details">
-          <div class="result-detail">${escapeHtml(sanitizedReason)}</div>
+  // Skipped
+  if (results.skipped?.length > 0) {
+    results.skipped.forEach(item => {
+      html += `
+        <div class="result-item skipped">
+          <div class="result-item-header">
+            <span class="result-item-name">${escapeHtml(extractFilename(item.filePath))}</span>
+            <span class="result-item-status skipped">Skipped</span>
+          </div>
+          <div class="result-item-details">
+            <span class="result-item-detail">${escapeHtml(sanitizeError(item.reason))}</span>
+          </div>
         </div>
       `;
-      resultsContent.appendChild(item);
     });
   }
   
-  if (results.failed && results.failed.length > 0) {
-    results.failed.forEach(failed => {
-      const item = document.createElement('div');
-      item.className = 'result-item error';
-      // Sanitize error message and file path
-      const sanitizedError = sanitizeErrorMessage(failed.error);
-      const fileName = extractFileName(failed.filePath);
-      item.innerHTML = `
-        <div class="result-item-header">
-          <div class="result-item-title">${escapeHtml(fileName)}</div>
-          <div class="result-item-status error">Failed</div>
-        </div>
-        <div class="result-item-details">
-          <div class="result-detail">${escapeHtml(sanitizedError)}</div>
+  // Failed
+  if (results.failed?.length > 0) {
+    results.failed.forEach(item => {
+      html += `
+        <div class="result-item error">
+          <div class="result-item-header">
+            <span class="result-item-name">${escapeHtml(extractFilename(item.filePath))}</span>
+            <span class="result-item-status error">Failed</span>
+          </div>
+          <div class="result-item-details">
+            <span class="result-item-detail">${escapeHtml(sanitizeError(item.error))}</span>
+          </div>
         </div>
       `;
-      resultsContent.appendChild(item);
     });
   }
   
   // Summary
   if (results.totals) {
-    const summary = createSummary(results.totals);
-    resultsContent.appendChild(summary);
+    const t = results.totals;
+    const totalChange = t.totalFinal - t.totalOriginal;
+    const totalPercent = t.totalOriginal > 0 
+      ? ((totalChange / t.totalOriginal) * 100).toFixed(1) 
+      : '0';
+    const changeText = totalChange >= 0 ? `+${totalPercent}%` : `${totalPercent}%`;
+    
+    html += `
+      <div class="results-summary">
+        <h3 class="results-summary-title">Summary</h3>
+        <div class="results-summary-grid">
+          <div class="summary-stat">
+            <div class="summary-stat-value">${t.processedCount || 0}</div>
+            <div class="summary-stat-label">Processed</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-value">${formatBytes(t.totalOriginal || 0)}</div>
+            <div class="summary-stat-label">Original</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-value">${formatBytes(t.totalFinal || 0)}</div>
+            <div class="summary-stat-label">Final</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-value">${changeText}</div>
+            <div class="summary-stat-label">Change</div>
+          </div>
+        </div>
+      </div>
+    `;
   }
   
-  resultsSection.style.display = 'block';
-  resultsSection.scrollIntoView({ behavior: 'smooth' });
+  elements.resultsContent.innerHTML = html;
+  elements.resultsPanel?.classList.add('visible');
+  elements.resultsPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Create Result Item
-function createResultItem(result, status) {
-  const item = document.createElement('div');
-  item.className = `result-item ${status}`;
+// ============================================
+// RESET FORM
+// ============================================
+
+function resetForm() {
+  elements.form?.reset();
+  selectedFiles = [];
+  ignoredFiles = [];
   
-  const originalSize = formatBytes(result.originalSize);
-  const finalSize = formatBytes(result.finalSize);
-  const saved = formatBytes(result.bytesSaved);
-  const percent = result.percentSaved.toFixed(2);
+  // Reset file inputs
+  if (elements.inputFiles) elements.inputFiles.value = '';
+  if (elements.inputFolder) elements.inputFolder.value = '';
   
-  item.innerHTML = `
-    <div class="result-item-header">
-      <div class="result-item-title">${escapeHtml(extractFileName(result.outputPath))}</div>
-      <div class="result-item-status ${status}">Processed</div>
-    </div>
-    <div class="result-item-details">
-      <div class="result-detail">
-        <strong>Original:</strong> ${originalSize} (${result.metadata.width}×${result.metadata.height})
-      </div>
-      <div class="result-detail">
-        <strong>Final:</strong> ${finalSize}
-      </div>
-      <div class="result-detail">
-        <strong>Saved:</strong> ${saved} (${percent}%)
-      </div>
-    </div>
-  `;
+  // Reset UI elements
+  if (elements.qualityValue) elements.qualityValue.textContent = '80';
+  if (elements.backgroundHex) elements.backgroundHex.value = '#ffffff';
+  if (elements.renamePreview) elements.renamePreview.textContent = '';
   
-  return item;
+  // Reset output
+  if (elements.useCustomOutput) elements.useCustomOutput.checked = false;
+  if (elements.outputDir) elements.outputDir.readOnly = true;
+  
+  // Hide results and fallback
+  elements.resultsPanel?.classList.remove('visible');
+  document.getElementById('open-folder-fallback')?.classList.add('hidden');
+  
+  // Remove focus highlights
+  document.querySelectorAll('.section-card').forEach(s => {
+    s.classList.remove('focused');
+  });
+  
+  // Update state
+  updateFileListPreview();
+  updateProcessButton();
+  updateOutputDirectory();
 }
 
-// Create Summary
-function createSummary(totals) {
-  const summary = document.createElement('div');
-  summary.className = 'result-summary';
+// ============================================
+// OPEN FOLDER
+// ============================================
+
+async function openFolder(path) {
+  const fallback = document.getElementById('open-folder-fallback');
+  const fallbackPath = document.getElementById('fallback-path');
   
-  const totalOriginal = formatBytes(totals.totalOriginal);
-  const totalFinal = formatBytes(totals.totalFinal);
-  const totalSaved = formatBytes(totals.totalSaved);
-  const percentSaved = totals.percentSaved.toFixed(2);
+  // Hide fallback before attempting
+  fallback?.classList.add('hidden');
   
-  summary.innerHTML = `
-    <h3 class="result-summary-title">Summary</h3>
-    <div class="result-summary-stats">
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totals.processedCount}</div>
-        <div class="summary-stat-label">Files Processed</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totalOriginal}</div>
-        <div class="summary-stat-label">Total Original Size</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totalFinal}</div>
-        <div class="summary-stat-label">Total Final Size</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totalSaved}</div>
-        <div class="summary-stat-label">Total Saved (${percentSaved}%)</div>
-      </div>
-      ${totals.skippedCount > 0 ? `
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totals.skippedCount}</div>
-        <div class="summary-stat-label">Files Skipped</div>
-      </div>
-      ` : ''}
-      ${totals.failedCount > 0 ? `
-      <div class="summary-stat">
-        <div class="summary-stat-value">${totals.failedCount}</div>
-        <div class="summary-stat-label">Files Failed</div>
-      </div>
-      ` : ''}
-    </div>
-  `;
-  
-  return summary;
+  try {
+    const response = await fetch('/api/open-folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path })
+    });
+    
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      console.warn('Could not open folder:', data.error || 'Unknown error');
+      // Show fallback with path
+      if (fallback && fallbackPath) {
+        fallbackPath.textContent = data.path || path;
+        fallback.classList.remove('hidden');
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to open folder:', error);
+    // Show fallback with path
+    if (fallback && fallbackPath) {
+      fallbackPath.textContent = path;
+      fallback.classList.remove('hidden');
+    }
+  }
 }
 
-// Format Bytes
+// ============================================
+// VERSION & UPDATES
+// ============================================
+
+async function loadVersion() {
+  try {
+    // Hide version badge until loaded
+    if (elements.version) {
+      elements.version.style.opacity = '0';
+    }
+    
+    const response = await fetch('/api/version');
+    if (response.ok) {
+      const data = await response.json();
+      if (elements.version && data.version) {
+        elements.version.textContent = `v${data.version}`;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load version:', error);
+  } finally {
+    if (elements.version) {
+      elements.version.style.opacity = '1';
+    }
+  }
+}
+
+async function checkForUpdates() {
+  try {
+    const response = await fetch('/api/check-update');
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    if (data.updateAvailable && data.latestVersion && elements.updateBanner) {
+      elements.updateBanner.innerHTML = `
+        <span><strong>Update available:</strong> v${data.currentVersion} → v${data.latestVersion}</span>
+        <code>npm update -g pulp-image</code>
+        <span>or visit <a href="https://pulp.run" target="_blank">pulp.run</a></span>
+        <button class="update-banner-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
+      `;
+      elements.updateBanner.classList.remove('hidden');
+    }
+  } catch (error) {
+    // Silent fail for update check
+  }
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -1050,331 +1017,33 @@ function formatBytes(bytes) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-// Escape HTML
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
 
-// Sanitize error messages for UI display
-function sanitizeErrorMessage(errorMsg) {
-  if (!errorMsg) return 'An error occurred.';
-  
-  let sanitized = errorMsg;
-  
-  // Remove temp paths
-  sanitized = sanitized.replace(/\/tmp\/[^\s]+/g, '');
-  sanitized = sanitized.replace(/[^\s]*pulp-image-[^\s]+/g, '');
-  
-  // Remove CLI flags and technical jargon
-  sanitized = sanitized.replace(/--[a-z-]+/g, '');
-  sanitized = sanitized.replace(/Use --alpha-mode flatten/g, '');
-  sanitized = sanitized.replace(/Use --overwrite/g, '');
-  
-  // Transform common error messages to user-friendly versions
-  if (sanitized.includes('transparency') && sanitized.includes('does not support')) {
-    const formatMatch = sanitized.match(/format (\w+)/i);
-    const format = formatMatch ? formatMatch[1].toUpperCase() : 'this format';
-    return `This image contains transparency, but ${format} does not support transparency.\n\nChoose a format like PNG or WebP, or enable background flattening.`;
-  }
-  
-  if (sanitized.includes('already exists')) {
-    return 'This file already exists. Enable "Overwrite Existing Files" to replace it.';
-  }
-  
-  if (sanitized.includes('Input and output paths are the same')) {
-    return 'Input and output are the same file. Enable "Overwrite Existing Files" to process in place.';
-  }
-  
-  if (sanitized.includes('Input file not found')) {
-    return 'The selected file could not be found. Please select the file again.';
-  }
-  
-  if (sanitized.includes('Unsupported output format')) {
-    return 'The selected output format is not supported. Please choose PNG, JPG, WebP, or AVIF.';
-  }
-  
-  // Clean up extra whitespace
-  sanitized = sanitized.replace(/\s+/g, ' ').trim();
-  
-  // If message is too technical or empty, provide generic message
-  if (sanitized.length === 0 || sanitized.includes('Error:') || sanitized.includes('at ')) {
-    return 'An error occurred while processing this image. Please check the image file and try again.';
-  }
-  
-  return sanitized;
+function extractFilename(path) {
+  if (!path) return 'Unknown';
+  return path.split(/[/\\]/).pop() || path;
 }
 
-// Extract just the filename from a path
-function extractFileName(filePath) {
-  if (!filePath) return 'Unknown file';
-  // Remove temp paths
-  if (filePath.includes('/tmp/') || filePath.includes('pulp-image-')) {
-    // Try to extract original filename from path
-    const parts = filePath.split('/');
-    return parts[parts.length - 1] || 'File';
+function sanitizeError(msg) {
+  if (!msg) return 'An error occurred.';
+  
+  let clean = msg;
+  clean = clean.replace(/\/tmp\/[^\s]+/g, '');
+  clean = clean.replace(/[^\s]*pulp-image-[^\s]+/g, '');
+  clean = clean.replace(/--[a-z-]+/g, '');
+  
+  if (clean.includes('transparency') && clean.includes('does not support')) {
+    return 'Image has transparency but target format does not support it. Use PNG/WebP or enable background flattening.';
   }
-  // Return just the filename
-  const parts = filePath.split(/[/\\]/);
-  return parts[parts.length - 1] || filePath;
+  if (clean.includes('already exists')) {
+    return 'File already exists. Enable "Overwrite existing files" to replace.';
+  }
+  
+  clean = clean.replace(/\s+/g, ' ').trim();
+  return clean || 'An error occurred.';
 }
-
-// Reset Form
-function resetForm() {
-  form.reset();
-  selectedFiles = [];
-  ignoredFiles = [];
-  ignoredFilesCount = 0;
-  showIgnoredFiles = false;
-  inputSourceFiles.value = '';
-  inputSourceFolder.value = '';
-  qualityValue.textContent = '80';
-  qualitySlider.value = '80';
-  backgroundText.value = '#ffffff';
-  backgroundColor.value = '#ffffff';
-  useCustomOutput.checked = false;
-  outputDir.readOnly = true;
-  outputDir.style.background = '';
-  openResultsFolderBtn.style.display = 'none';
-  openResultsFolderBtn.disabled = true;
-  if (openResultsFolderHelper) {
-    openResultsFolderHelper.style.display = 'none';
-  }
-  if (openResultsFolderFallback) {
-    openResultsFolderFallback.style.display = 'none';
-  }
-  if (openResultsFolderResultsBtn) {
-    openResultsFolderResultsBtn.style.display = 'none';
-    openResultsFolderResultsBtn.disabled = true;
-  }
-  if (openResultsFolderResultsHelper) {
-    openResultsFolderResultsHelper.style.display = 'none';
-  }
-  if (openResultsFolderResultsFallback) {
-    openResultsFolderResultsFallback.style.display = 'none';
-  }
-  updateUI().catch(console.error);
-  resultsSection.style.display = 'none';
-}
-
-
-// Terminal Example Copy Functionality
-function setupTerminalCopyButtons() {
-  document.querySelectorAll('.terminal-example-copy').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const body = btn.closest('.terminal-example-body');
-      const textToCopy = body?.dataset.copy;
-      
-      if (!textToCopy) return;
-      
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-        
-        // Show success state
-        const copyIcon = btn.querySelector('.copy-icon');
-        const checkIcon = btn.querySelector('.check-icon');
-        
-        if (copyIcon && checkIcon) {
-          copyIcon.style.display = 'none';
-          checkIcon.style.display = 'block';
-          
-          setTimeout(() => {
-            copyIcon.style.display = 'block';
-            checkIcon.style.display = 'none';
-          }, 2000);
-        }
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    });
-  });
-}
-
-// Back to Top Button (works for all tabs)
-function setupBackToTop() {
-  const backToTop = document.getElementById('back-to-top');
-  if (!backToTop) return;
-  
-  // Show/hide based on scroll position
-  window.addEventListener('scroll', () => {
-    backToTop.style.display = window.scrollY > 300 ? 'flex' : 'none';
-  });
-  
-  // Click handler
-  backToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-}
-
-// Help Sub-Navigation
-function setupHelpSubnav() {
-  const subnav = document.getElementById('help-subnav');
-  if (!subnav) return;
-  
-  const links = subnav.querySelectorAll('.help-subnav-link');
-  const helpTab = document.getElementById('help-tab');
-  
-  // Set first link as active initially
-  if (links.length > 0) {
-    links[0].classList.add('active');
-  }
-  
-  // Flag to temporarily disable scroll-based updates after click
-  let isClickScrolling = false;
-  let clickedSectionId = null;
-  
-  // Navigation links - smooth scroll
-  links.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // IMMEDIATELY block scroll detection before anything else
-      isClickScrolling = true;
-      
-      const targetId = link.getAttribute('href').slice(1);
-      const target = document.getElementById(targetId);
-      
-      if (target) {
-        clickedSectionId = targetId;
-        
-        // Set active immediately on click
-        links.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        
-        // Use requestAnimationFrame to ensure DOM update before scroll
-        requestAnimationFrame(() => {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-        
-        // Re-enable scroll updates after animation completes
-        setTimeout(() => {
-          // Force the clicked section to stay active after scroll settles
-          if (clickedSectionId) {
-            links.forEach(l => {
-              const id = l.getAttribute('href').slice(1);
-              l.classList.toggle('active', id === clickedSectionId);
-            });
-          }
-          // Small additional delay before allowing scroll detection again
-          setTimeout(() => {
-            isClickScrolling = false;
-            clickedSectionId = null;
-          }, 150);
-        }, 900);
-      } else {
-        // Reset if target not found
-        isClickScrolling = false;
-      }
-    });
-  });
-  
-  // Track scroll position to update active nav link
-  function updateActiveOnScroll() {
-    // Skip if we're in the middle of a click-triggered scroll
-    if (isClickScrolling) return;
-    
-    // Only track when help tab is visible
-    if (!helpTab || !helpTab.classList.contains('active')) return;
-    
-    // Find the section whose top is closest to (but not below) the viewport top
-    // This handles cases where sections can't scroll all the way to the top
-    let currentSection = '';
-    let bestTop = -Infinity;
-    const threshold = 150; // How far below viewport top a section can be and still be "current"
-    
-    links.forEach(link => {
-      const targetId = link.getAttribute('href').slice(1);
-      const section = document.getElementById(targetId);
-      if (section) {
-        const rect = section.getBoundingClientRect();
-        // Section is "in view" if its top is above the threshold
-        // Pick the one with the largest top value that's still <= threshold
-        // (i.e., the one closest to the top but still visible)
-        if (rect.top <= threshold && rect.top > bestTop) {
-          bestTop = rect.top;
-          currentSection = targetId;
-        }
-      }
-    });
-    
-    // Fallback: if no section found, use first one
-    if (!currentSection && links.length > 0) {
-      currentSection = links[0].getAttribute('href').slice(1);
-    }
-    
-    // Update active class
-    if (currentSection) {
-      links.forEach(link => {
-        const targetId = link.getAttribute('href').slice(1);
-        link.classList.toggle('active', targetId === currentSection);
-      });
-    }
-  }
-  
-  // Listen to window scroll
-  window.addEventListener('scroll', updateActiveOnScroll);
-}
-
-// Check for Updates
-async function checkForUpdates() {
-  try {
-    const response = await fetch('/api/check-update');
-    if (!response.ok) return;
-    
-    const updateInfo = await response.json();
-    
-    if (updateInfo.updateAvailable && updateInfo.latestVersion) {
-      showUpdateBanner(updateInfo.currentVersion, updateInfo.latestVersion);
-    }
-  } catch (error) {
-    // Silently fail - update check is optional
-    console.debug('Update check failed:', error);
-  }
-}
-
-// Show Update Banner
-function showUpdateBanner(currentVersion, latestVersion) {
-  // Don't show if already shown
-  if (document.getElementById('update-banner')) return;
-  
-  const banner = document.createElement('div');
-  banner.id = 'update-banner';
-  banner.className = 'update-banner';
-  banner.innerHTML = `
-    <div class="update-banner-content">
-      <span class="update-banner-icon">🎉</span>
-      <div class="update-banner-text">
-        <strong>Update available!</strong>
-        <span class="update-banner-versions">v${currentVersion} → v${latestVersion}</span>
-      </div>
-      <div class="update-banner-actions">
-        <span class="update-banner-hint">CLI users:</span>
-        <code>npm update -g pulp-image</code>
-        <span class="update-banner-separator">|</span>
-        <span class="update-banner-hint">Portable:</span>
-        <a href="https://pulp.run" target="_blank" rel="noopener">pulp.run</a>
-      </div>
-    </div>
-    <button class="update-banner-close" aria-label="Dismiss">&times;</button>
-  `;
-  
-  // Add close handler
-  banner.querySelector('.update-banner-close').addEventListener('click', () => {
-    banner.remove();
-  });
-  
-  // Insert at top of container
-  const container = document.querySelector('.container');
-  if (container) {
-    container.insertBefore(banner, container.firstChild);
-  }
-}
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  setupTerminalCopyButtons();
-  setupBackToTop();
-  setupHelpSubnav();
-});

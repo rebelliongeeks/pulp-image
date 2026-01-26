@@ -3,871 +3,444 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulp Image - Browser UI</title>
+  <title>Pulp Image</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
+  <div class="app-container">
+    
+    <!-- Update Banner (injected by JS when update available) -->
+    <div id="update-banner" class="update-banner hidden"></div>
+
+    <!-- Header -->
     <header class="header">
-      <div class="brand">
-        <img src="/assets/pulp-logo-white.svg" alt="Pulp Image logo" class="logo">
+      <div class="header-left">
+        <img src="/assets/pulp-logo-white.svg" alt="Pulp" class="logo">
         <div class="brand-text">
-          <h1>Pulp Image</h1>
-          <p class="brand-subtitle">by Rebellion Geeks <span class="version" id="version">v0.1.0</span></p>
+          <span class="header-title">Pulp Image</span>
+          <span class="header-subtitle">by <a href="https://rebelliongeeks.com" target="_blank">Rebellion Geeks</a></span>
         </div>
+        <span class="header-version" id="version"></span>
+      </div>
+      <div class="header-right">
+        <a href="help.html" class="header-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Help</span>
+        </a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </header>
 
-    <main class="main-content">
-      <div class="tabs">
-        <button class="tab-button active" data-tab="process">Process Images</button>
-        <button class="tab-button" data-tab="help">Help & CLI Reference</button>
-      </div>
-
-      <!-- Process Tab -->
-      <div class="tab-content active" id="process-tab">
-        <form id="process-form" class="process-form">
-          <!-- Input Source -->
-          <div class="form-group">
-            <label class="form-label">
-              Input Source <span class="required">*</span>
-            </label>
-            
-            <!-- Input Mode Switch -->
-            <div class="input-mode-switch">
-              <label class="radio-label">
-                <input type="radio" name="input-mode" value="files" checked>
-                <span>Files</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="input-mode" value="folder">
-                <span>Folder</span>
-              </label>
-            </div>
-            
-            <!-- Files Input -->
-            <input type="file" id="input-source-files" class="file-input" multiple accept="image/png,image/jpeg,image/webp,image/avif" style="display: block;">
-            
-            <!-- Folder Input -->
-            <input type="file" id="input-source-folder" class="file-input" webkitdirectory directory multiple style="display: none;">
-            
-            <div class="input-helper" id="input-helper">
-              Select one or more image files. Supports PNG, JPG, WebP, AVIF. Multiple files will be processed as a batch.
-            </div>
-            
-            <!-- Folder mode privacy notice -->
-            <div id="folder-privacy-notice" class="privacy-notice" style="display: none;">
-              <div class="privacy-notice-content">
-                <strong>Privacy note:</strong> Files are processed locally on your computer. Browsers may show a security prompt when selecting folders. No files are uploaded to the internet.
-              </div>
-              <div class="privacy-notice-browser" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-                Your browser may ask for permission to access this folder.
-              </div>
-            </div>
-            
-            <!-- File List Preview -->
-            <div id="input-preview" class="input-preview">
-              <div class="file-list-summary">
-                <span id="file-list-summary-text">No files selected</span>
-                <button type="button" id="toggle-file-list" class="toggle-file-list-btn" style="display: none;">Show files</button>
-              </div>
-              <div id="file-list-detail" class="file-list-detail" style="display: none;">
-                <!-- File list will be populated here -->
-              </div>
-              <div style="margin-top: 0.5rem;">
-                <button type="button" id="toggle-ignored-files" class="toggle-file-list-btn toggle-file-list-btn-secondary" style="display: none;">Show ignored files</button>
-              </div>
-              <div id="ignored-files-list" class="file-list-detail ignored-files-list" style="display: none;">
-                <!-- Ignored files will be populated here -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Output Directory -->
-          <div class="form-group">
-            <label for="output-dir" class="form-label">
-              Output Directory
-            </label>
-            <input type="text" id="output-dir" class="text-input" readonly placeholder="~/my-images or full path">
-            <div class="input-helper" id="output-dir-helper">
-              Files will be saved in a new folder inside your home directory.
-            </div>
-            
-            <!-- Advanced Output Options -->
-            <details class="advanced-options">
-              <summary class="advanced-options-summary">Advanced output options</summary>
-              <div class="advanced-options-content">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="use-custom-output">
-                  <span class="checkbox-text">Use custom output directory</span>
-                </label>
-                <div class="input-helper">
-                  When enabled, you can specify a custom output directory. Use <code>~</code> as a shortcut for your home folder (e.g., <code>~/my-images</code>), or enter a full path.
-                </div>
-              </div>
-            </details>
-            
-            <div class="form-actions-inline" style="margin-top: 0.5rem;">
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <button type="button" id="open-results-folder" class="button button-secondary" style="display: none;">
-                  Open results folder
-                </button>
-                <div id="open-results-folder-helper" class="button-helper-text" style="display: none;"></div>
-                <div id="open-results-folder-fallback" class="folder-open-fallback" style="display: none;">
-                  <div class="folder-open-fallback-message"></div>
-                  <div class="folder-open-fallback-path"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Format -->
-          <div class="form-group">
-            <label for="format" class="form-label">Output Format</label>
-            <select id="format" class="select-input">
-              <option value="">Keep original format</option>
-              <option value="png">PNG - Lossless, supports transparency</option>
-              <option value="jpg">JPG - Lossy, best for photos, no transparency</option>
-              <option value="webp">WebP - Modern format, good compression</option>
-              <option value="avif">AVIF - Best compression, modern browsers</option>
-            </select>
-            <div class="input-helper" id="format-helper">
-              Select output format or keep original.
-            </div>
-          </div>
-
-          <!-- Width & Height -->
-          <div class="form-row">
-            <div class="form-group">
-              <label for="width" class="form-label">Width (px)</label>
-              <input type="number" id="width" class="number-input" min="1" placeholder="Auto">
-              <div class="input-helper">Leave empty to preserve aspect ratio</div>
-            </div>
-            <div class="form-group">
-              <label for="height" class="form-label">Height (px)</label>
-              <input type="number" id="height" class="number-input" min="1" placeholder="Auto">
-              <div class="input-helper">Leave empty to preserve aspect ratio</div>
-            </div>
-          </div>
-
-          <!-- Quality -->
-          <div class="form-group">
-            <label for="quality" class="form-label">
-              Quality <span id="quality-value" class="value-display">80</span>
-            </label>
-            <input type="range" id="quality" class="slider-input" min="1" max="100" value="80">
-            <div class="input-helper" id="quality-helper">
-              Quality for lossy formats (1-100). Higher = better quality but larger file.
-            </div>
-          </div>
-
-          <!-- Lossless -->
-          <div class="form-group">
-            <label class="toggle-label">
-              <input type="checkbox" id="lossless" class="toggle-input">
-              <span class="toggle-slider"></span>
-              <span class="toggle-text">Lossless Compression</span>
-            </label>
-            <div class="input-helper" id="lossless-helper">
-              Use lossless compression where supported (PNG, WebP, AVIF). PNG is always lossless.
-            </div>
-          </div>
-
-          <!-- Alpha Mode -->
-          <div class="form-group">
-            <label class="form-label">Alpha (Transparency) Handling</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" name="alpha-mode" value="flatten" checked>
-                <span>Flatten</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="alpha-mode" value="error">
-                <span>Error</span>
-              </label>
-            </div>
-            <div class="input-helper">
-              Flatten: Composite transparency onto background color. Error: Fail if transparency is present.
-            </div>
-          </div>
-
-          <!-- Background Color -->
-          <div class="form-group">
-            <label for="background" class="form-label">Background Color</label>
-            <div class="color-input-wrapper">
-              <input type="color" id="background" class="color-input" value="#ffffff">
-              <input type="text" id="background-text" class="color-text-input" value="#ffffff" readonly>
-            </div>
-            <div class="input-helper">
-              Background color for flattening transparency (used when converting to formats without transparency).
-            </div>
-          </div>
-
-          <!-- Rename Pattern -->
-          <div class="form-group">
-            <label for="rename-pattern" class="form-label">Rename Pattern (optional)</label>
-            <input type="text" id="rename-pattern" class="text-input" placeholder="e.g., {name}-optimized.{ext}">
-            <div class="input-helper">
-              Supported tokens: <code>{name}</code> (original basename), <code>{ext}</code> (output extension), <code>{index}</code> (1-based index). 
-              The rename pattern fully controls the output filename. <code>{name}</code> is optional and can be omitted.
-              <br><br>
-              <strong>Example:</strong> <code>{index}-cute-animal.{ext}</code><br>
-              → <code>1-cute-animal.webp</code>, <code>2-cute-animal.webp</code>, <code>3-cute-animal.webp</code>
-            </div>
-            <div id="rename-preview" class="preview-text"></div>
-          </div>
-
-          <!-- Suffix (Legacy - keep for backward compatibility but deprecate) -->
-          <div class="form-group" style="display: none;">
-            <label for="suffix" class="form-label">Custom Suffix</label>
-            <input type="text" id="suffix" class="text-input" placeholder="e.g., optimized">
-            <div class="input-helper">
-              Custom suffix to add before file extension. Example: "optimized" creates "image-optimized.png"
-            </div>
-            <div id="suffix-preview" class="preview-text"></div>
-          </div>
-
-          <!-- Auto Suffix -->
-          <div class="form-group">
-            <label class="toggle-label">
-              <input type="checkbox" id="auto-suffix" class="toggle-input">
-              <span class="toggle-slider"></span>
-              <span class="toggle-text">Auto Suffix</span>
-            </label>
-            <div class="input-helper">
-              Automatically add size-based suffix: -800w (width), -600h (height), -800x600 (both).<br>
-              <strong>Note:</strong> If using a rename pattern above, add dimensions directly there instead, this option won't apply.
-            </div>
-            <div id="auto-suffix-preview" class="preview-text"></div>
-          </div>
-
-          <!-- Overwrite -->
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" id="overwrite" class="checkbox-input">
-              <span class="checkbox-text">Overwrite Existing Files</span>
-            </label>
-            <div class="input-helper warning-text" id="overwrite-warning" style="display: none;">
-              ⚠️ Warning: This will overwrite existing output files.
-            </div>
-          </div>
-
-          <!-- Submit Button -->
-          <div class="form-actions">
-            <button type="submit" id="process-button" class="button button-primary">
-              Process Images
-            </button>
-            <button type="button" id="reset-button" class="button button-secondary">
-              Reset Form
-            </button>
-          </div>
-        </form>
-
-        <!-- Results Section -->
-        <div id="results-section" class="results-section" style="display: none;">
-          <div style="margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <h2 class="results-title" style="margin: 0;">Processing Results</h2>
-              <button type="button" id="open-results-folder-results" class="button button-secondary" style="display: none;">
-                Open results folder
-              </button>
-            </div>
-            <div id="open-results-folder-results-helper" class="button-helper-text" style="display: none; text-align: right;"></div>
-            <div id="open-results-folder-results-fallback" class="folder-open-fallback" style="display: none; text-align: right;">
-              <div class="folder-open-fallback-message"></div>
-              <div class="folder-open-fallback-path"></div>
-            </div>
-          </div>
-          <div id="results-content"></div>
-        </div>
-      </div>
-
-      <!-- Help Tab -->
-      <div class="tab-content" id="help-tab">
-        <div class="help-content">
-          <!-- Sub-Navigation -->
-          <nav class="help-subnav" id="help-subnav">
-            <a class="help-subnav-link" href="#help-compression">Formats / Compression</a>
-            <a class="help-subnav-link" href="#help-ui-options">UI Guide</a>
-            <a class="help-subnav-link" href="#help-install">Install CLI</a>
-            <a class="help-subnav-link" href="#help-reference">CLI Options</a>
-            <a class="help-subnav-link" href="#help-examples">Examples</a>
-          </nav>
-
-          <!-- Welcome -->
-          <section id="help-welcome">
-            <h2>Welcome to Pulp Image UI</h2>
-            <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">This browser-based UI includes all features of the CLI, except automatic deletion of original files, as browser security prevents file deletion. The CLI is optional and only needed for automation, advanced workflows, or if you prefer working in the terminal.</p>
-            
-            <p style="margin-bottom: 0.25rem;"><strong>Everything Happens Locally</strong></p>
-            <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">All image processing runs directly on your computer. No files are uploaded to the internet. Your images stay private and processing remains fast. Pulp Image UI works fully offline, even if your browser shows upload notifications.</p>
-            
-            <p style="color: var(--text-secondary);">If you downloaded this UI as a portable package from the <a target="_blank" href="https://pulp.run">Pulp</a> website, you do not need to install the CLI. If you want to use the CLI separately, see the <a href="#help-install">installation guide</a>.</p>
-          </section>
-
-          <!-- Compression Behavior -->
-
-          <section id="help-compression">
-            <h2>Formats / Compression</h2>
-            <table class="help-table">
-              <thead><tr><th>Format</th><th>Transparency</th><th>Compression</th><th>Default Quality</th></tr></thead>
-              <tbody>
-                <tr><td><code>png</code></td><td>✓ Yes</td><td>Always lossless</td><td>—</td></tr>
-                <tr><td><code>jpg</code></td><td>✗ No</td><td>Always lossy</td><td>80</td></tr>
-                <tr><td><code>webp</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>80</td></tr>
-                <tr><td><code>avif</code></td><td>✓ Yes</td><td>Lossy or lossless</td><td>50</td></tr>
-              </tbody>
-            </table>
-            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;"><em>Note: Resize does not affect compression, it only changes dimensions.</em></p>
-          </section>
-
-          <!-- UI Options Guide -->
-          <section id="help-ui-options">
-            <h2>UI Options Guide</h2>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Selecting Images</h3>
-              <p style="margin-bottom: 0.75rem;">Choose between <strong>Files</strong> (individual images) or <strong>Folder</strong> (all images in a directory). Supports drag-and-drop.</p>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Output Directory</h3>
-              <p style="margin-bottom: 0.5rem;">Default: <code>~/pulp-image-results/[timestamp]/</code></p>
-              <p style="margin-bottom: 0.75rem;">Enable "Use custom output directory" to specify your own path. Use <code>~</code> for home directory.</p>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Dimensions (Width & Height)</h3>
-              <table class="help-table">
-                <thead><tr><th>Setting</th><th>Result</th></tr></thead>
-                <tbody>
-                  <tr><td>Width only</td><td>Height adjusts to preserve aspect ratio</td></tr>
-                  <tr><td>Height only</td><td>Width adjusts to preserve aspect ratio</td></tr>
-                  <tr><td>Both</td><td>Exact dimensions (may crop)</td></tr>
-                  <tr><td>Neither</td><td>Original size (format/quality only)</td></tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Quality Slider</h3>
-              <p style="margin-bottom: 0.5rem;">Controls compression for JPG, WebP, AVIF (1-100). Disabled for PNG and when lossless is enabled.</p>
-              <table class="help-table">
-                <thead><tr><th>Range</th><th>Use Case</th></tr></thead>
-                <tbody>
-                  <tr><td>90-100</td><td>Near-lossless, important photos</td></tr>
-                  <tr><td>75-89</td><td>Good balance (recommended)</td></tr>
-                  <tr><td>50-74</td><td>Thumbnails, previews</td></tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Alpha (Transparency)</h3>
-              <p style="margin-bottom: 0.5rem;">When converting to JPG (no transparency):</p>
-              <ul style="margin: 0 0 0 1.25rem; color: var(--text-secondary);">
-                <li><strong>Flatten</strong> = Fill transparent areas with background color</li>
-                <li><strong>Error</strong> = Fail if image has transparency</li>
-              </ul>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Auto Suffix</h3>
-              <p style="margin-bottom: 0.5rem;">Adds dimensions to filename:</p>
-              <ul style="margin: 0 0 0 1.25rem; color: var(--text-secondary);">
-                <li>Width 800 → <code>photo-800w.webp</code></li>
-                <li>Height 600 → <code>photo-600h.webp</code></li>
-                <li>Both → <code>photo-800x600.webp</code></li>
-              </ul>
-              <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);"><em><strong>Note:</strong> If using a rename pattern, add dimensions directly in the pattern(auto suffix won't apply).</em></p>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Rename Patterns (UI Only)</h3>
-              <p style="margin-bottom: 0.5rem;">Flexible output filename generation. <em>CLI users already have shell tools for renaming that can be piped with Pulp.</em></p>
-              <p style="margin-bottom: 0.5rem;"><strong>Supported Tokens:</strong></p>
-              <ul style="margin: 0 0 1rem 1.25rem; color: var(--text-secondary);">
-                <li><code>{name}</code> = Original basename (without extension)</li>
-                <li><code>{ext}</code> = Output extension (without leading dot)</li>
-                <li><code>{index}</code> = 1-based index in batch</li>
-              </ul>
-              <table class="help-table">
-                <thead><tr><th>Pattern</th><th>Result</th></tr></thead>
-                <tbody>
-                  <tr><td><code>{name}-optimized.{ext}</code></td><td>photo-optimized.webp</td></tr>
-                  <tr><td><code>{index}-{name}.{ext}</code></td><td>1-photo.webp, 2-cat.webp</td></tr>
-                  <tr><td><code>thumb-{name}.{ext}</code></td><td>thumb-photo.webp</td></tr>
-                  <tr><td><code>image-{index}.{ext}</code></td><td>image-1.webp, image-2.webp</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- Tips -->
-          <section id="help-tips">
-            <h2>Tips & Best Practices</h2>
-            
-            <div class="help-card">
-              <h4 class="help-card-title">🖼️ Web Images</h4>
-              <div class="help-card-text">WebP at quality 80-85. Great compression, modern browser support.</div>
-            </div>
-            
-            <div class="help-card">
-              <h4 class="help-card-title">📱 Responsive Images</h4>
-              <div class="help-card-text">Process same images with different widths (400, 800, 1200) + Auto Suffix.</div>
-            </div>
-            
-            <div class="help-card">
-              <h4 class="help-card-title">🎨 Graphics & Logos</h4>
-              <div class="help-card-text">PNG or WebP lossless to preserve sharp edges and text.</div>
-            </div>
-            
-            <div class="help-card">
-              <h4 class="help-card-title">📷 Photos</h4>
-              <div class="help-card-text">JPG 85-90 or WebP 80-85 for best size/quality balance.</div>
-            </div>
-          </section>
-
-          <section id="help-install">
-            <h2>Installing the CLI (Optional)</h2>
-            <p>The CLI is optional. Install it if you prefer working in the terminal, need automation or scripting, or want access to CLI-only features such as <code>--delete-original</code>.</p>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Install globally via npm (requires Node.js 18+)</span>
-              </div>
-              <div class="terminal-example-body" data-copy="npm install -g pulp-image">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> npm install -g pulp-image</pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Verify installation</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp --version">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp --version</pre>
-              </div>
-            </div>
-            
-            <div class="help-card">
-              <h4 class="help-card-title">Don't have Node.js?</h4>
-              <div class="help-card-text">
-                Download from <a href="https://nodejs.org" target="_blank" rel="noopener" style="color: var(--orange-text);">nodejs.org</a> (LTS version). After installing, open a terminal:
-                <ul style="margin: 0.5rem 0 0 1.25rem;">
-                  <li><strong>macOS:</strong> Press <kbd>Cmd + Space</kbd>, type "Terminal"</li>
-                  <li><strong>Windows:</strong> Search "PowerShell" or "Command Prompt"</li>
-                  <li><strong>Linux:</strong> Open your terminal application</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          <section id="help-reference">
-            <h2>CLI Options</h2>
-            <p>Complete reference for all CLI options:</p>
-            
-            <table class="help-table">
-              <thead><tr><th>Option</th><th>Description</th><th>Default</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td><code>-w, --width &lt;number&gt;</code></td>
-                  <td>Output width in pixels. Aspect ratio is preserved if height is not specified.</td>
-                  <td>—</td>
-                </tr>
-                <tr>
-                  <td><code>-h, --height &lt;number&gt;</code></td>
-                  <td>Output height in pixels. Aspect ratio is preserved if width is not specified.</td>
-                  <td>—</td>
-                </tr>
-                <tr>
-                  <td><code>-f, --format &lt;format&gt;</code></td>
-                  <td>Output format: <code>png</code>, <code>jpg</code>, <code>webp</code>, or <code>avif</code></td>
-                  <td>Same as input</td>
-                </tr>
-                <tr>
-                  <td><code>-o, --out &lt;dir&gt;</code></td>
-                  <td>Output directory. Created automatically if it doesn't exist.</td>
-                  <td><code>./pulp-image-results</code></td>
-                </tr>
-                <tr>
-                  <td><code>--quality &lt;number&gt;</code></td>
-                  <td>Quality for lossy formats (1-100). Higher = better quality, larger file.</td>
-                  <td>JPG: 80, WebP: 80, AVIF: 50</td>
-                </tr>
-                <tr>
-                  <td><code>--lossless</code></td>
-                  <td>Use lossless compression for WebP and AVIF. PNG is always lossless.</td>
-                  <td>Off (lossy)</td>
-                </tr>
-                <tr>
-                  <td><code>--suffix &lt;text&gt;</code></td>
-                  <td>Custom suffix added before file extension. E.g., "optimized" → image-optimized.png</td>
-                  <td>—</td>
-                </tr>
-                <tr>
-                  <td><code>--auto-suffix</code></td>
-                  <td>Automatically add size-based suffix: <code>-800w</code>, <code>-600h</code>, or <code>-800x600</code></td>
-                  <td>Off</td>
-                </tr>
-                <tr>
-                  <td><code>--background &lt;color&gt;</code></td>
-                  <td>Background color (hex) for transparency flattening when converting to JPG.</td>
-                  <td><code>#ffffff</code></td>
-                </tr>
-                <tr>
-                  <td><code>--alpha-mode &lt;mode&gt;</code></td>
-                  <td>How to handle transparency: <code>flatten</code> (composite onto background) or <code>error</code> (fail if present)</td>
-                  <td><code>flatten</code></td>
-                </tr>
-                <tr>
-                  <td><code>--overwrite</code></td>
-                  <td>Overwrite existing output files. By default, existing files are skipped.</td>
-                  <td>Off (skip)</td>
-                </tr>
-                <tr>
-                  <td><code>--delete-original</code></td>
-                  <td>Delete original files after successful processing. Only works if input/output paths differ. <em>(CLI only)</em></td>
-                  <td>Off</td>
-                </tr>
-                <tr>
-                  <td><code>-v, --verbose</code></td>
-                  <td>Show detailed per-file processing information. <em>(CLI only)</em></td>
-                  <td>Off</td>
-                </tr>
-                <tr>
-                  <td><code>--version</code></td>
-                  <td>Display version number.</td>
-                  <td>—</td>
-                </tr>
-                <tr>
-                  <td><code>--help</code></td>
-                  <td>Display help information.</td>
-                  <td>—</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-
-          <section id="help-examples">
-            <h2>Quick Examples</h2>
-            <p style="margin-bottom: 1rem;">Click to copy any command:</p>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                <span class="terminal-example-title">Convert to WebP</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp image.png --format webp">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">webp</span></pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                <span class="terminal-example-title">Resize to 800px width</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp image.png --width 800">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--width</span> <span class="value">800</span>
-<span class="comment"># Height adjusts to preserve aspect ratio</span></pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Batch convert a folder</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp ./images --format webp --out ./output">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./output</span>
-
-<span class="success">✓</span> <span class="output">Processed 12 file(s)</span>
-  <span class="output">Saved:</span> <span class="success">39.8 MB (82%)</span></pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Convert to AVIF with quality</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp image.png --format avif --quality 70">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp image.png <span class="flag">--format</span> <span class="value">avif</span> <span class="flag">--quality</span> <span class="value">70</span></pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Flatten transparency to JPG</span>
-              </div>
-              <div class="terminal-example-body" data-copy='pulp logo.png --format jpg --background "#ff6b35"'>
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp logo.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--background</span> <span class="value">"#ff6b35"</span>
-<span class="comment"># Transparent areas become orange</span></pre>
-              </div>
-            </div>
-            
-            <div class="terminal-example">
-              <div class="terminal-example-header">
-                
-                
-                
-                <span class="terminal-example-title">Batch resize with auto-suffix</span>
-              </div>
-              <div class="terminal-example-body" data-copy="pulp ./images --width 800 --auto-suffix --format webp">
-                <button class="terminal-example-copy" aria-label="Copy command">
-                  <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span>
-<span class="comment"># Output: photo-800w.webp</span></pre>
-              </div>
-            </div>
-          </section>
-
-          <section id="help-advanced">
-            <h2>Advanced Examples</h2>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Web Optimization</h3>
-              <div class="terminal-example">
-                <div class="terminal-example-header">
-                  
-                  
-                  
-                  <span class="terminal-example-title">Optimize assets for web deployment</span>
-                </div>
-                <div class="terminal-example-body" data-copy="pulp ./assets --format webp --quality 85 --out ./public/images">
-                  <button class="terminal-example-copy" aria-label="Copy command">
-                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
-                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </button>
-                  <pre><span class="cmd">$</span> pulp <span class="value">./assets</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--quality</span> <span class="value">85</span> <span class="flag">--out</span> <span class="value">./public/images</span></pre>
-                </div>
-              </div>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Responsive Images</h3>
-              <div class="terminal-example">
-                <div class="terminal-example-header">
-                  
-                  
-                  
-                  <span class="terminal-example-title">Generate multiple sizes for srcset</span>
-                </div>
-                <div class="terminal-example-body">
-                  <pre><span class="comment"># Run multiple times with different widths:</span>
-<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">400</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
-<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">800</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
-<span class="cmd">$</span> pulp <span class="value">./photos</span> <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--auto-suffix</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./responsive</span>
-<span class="comment"># Creates: photo-400w.webp, photo-800w.webp, photo-1200w.webp</span></pre>
-                </div>
-              </div>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Social Media</h3>
-              <div class="terminal-example">
-                <div class="terminal-example-header">
-                  
-                  
-                  
-                  <span class="terminal-example-title">Create Open Graph / Twitter card image</span>
-                </div>
-                <div class="terminal-example-body" data-copy='pulp cover.png --format jpg --quality 90 --width 1200 --height 630 --background "#ffffff"'>
-                  <button class="terminal-example-copy" aria-label="Copy command">
-                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
-                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </button>
-                  <pre><span class="cmd">$</span> pulp cover.png <span class="flag">--format</span> <span class="value">jpg</span> <span class="flag">--quality</span> <span class="value">90</span> \
-    <span class="flag">--width</span> <span class="value">1200</span> <span class="flag">--height</span> <span class="value">630</span> <span class="flag">--background</span> <span class="value">"#ffffff"</span></pre>
-                </div>
-              </div>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">CI/CD Pipeline</h3>
-              <div class="terminal-example">
-                <div class="terminal-example-header">
-                  
-                  
-                  
-                  <span class="terminal-example-title">Build script optimization</span>
-                </div>
-                <div class="terminal-example-body" data-copy="pulp ./src/images --format webp --quality 80 --out ./dist/images --overwrite">
-                  <button class="terminal-example-copy" aria-label="Copy command">
-                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
-                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </button>
-                  <pre><span class="cmd">$</span> pulp <span class="value">./src/images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--quality</span> <span class="value">80</span> \
-    <span class="flag">--out</span> <span class="value">./dist/images</span> <span class="flag">--overwrite</span>
-<span class="comment"># Overwrites on each build for fresh output</span></pre>
-                </div>
-              </div>
-            </div>
-            
-            <div class="help-subsection">
-              <h3 class="help-subsection-title">Delete Originals (CLI Only)</h3>
-              <div class="terminal-example">
-                <div class="terminal-example-header">
-                  
-                  
-                  
-                  <span class="terminal-example-title">Convert and remove originals</span>
-                </div>
-                <div class="terminal-example-body" data-copy="pulp ./images --format webp --out ./converted --delete-original">
-                  <button class="terminal-example-copy" aria-label="Copy command">
-                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
-                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </button>
-                  <pre><span class="cmd">$</span> pulp <span class="value">./images</span> <span class="flag">--format</span> <span class="value">webp</span> <span class="flag">--out</span> <span class="value">./converted</span> <span class="flag">--delete-original</span>
-<span class="comment"># ⚠️ Original files are permanently deleted after processing</span></pre>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- When to Use CLI vs UI -->
-          <section id="help-when-to-use">
-            <h2>When to Use CLI vs UI</h2>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div class="help-card">
-                <h4 class="help-card-title">Use CLI when:</h4>
-                <ul class="help-card-text" style="margin: 0; padding-left: 1.25rem;">
-                  <li>Automating workflows or scripts</li>
-                  <li>Processing large batches from command line</li>
-                  <li>Integrating with other tools</li>
-                  <li>You need to delete original files (CLI only)</li>
-                  <li>You're comfortable with command line</li>
-                </ul>
-              </div>
-              
-              <div class="help-card">
-                <h4 class="help-card-title">Use UI when:</h4>
-                <ul class="help-card-text" style="margin: 0; padding-left: 1.25rem;">
-                  <li>You're new to the tool</li>
-                  <li>You want visual feedback and guidance</li>
-                  <li>You need to understand option combinations</li>
-                  <li>You prefer point-and-click interfaces</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-        </div>
-      </div>
+    <!-- Main Layout -->
+    <div class="main-layout">
       
-      <!-- Back to Top Button (works for both tabs) -->
-      <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">Processing</div>
+            
+            <button class="sidebar-link active" data-section="input-output">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>Input</span>
+            </button>
+            
+            <button class="sidebar-link has-tooltip" data-section="format" data-tip="Output format and compression quality">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Format & Quality</span>
+            </button>
+            
+            <button class="sidebar-link" data-section="output">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>Output</span>
+            </button>
+            
+            <button class="sidebar-link" data-section="resize">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 3 21 3 21 9"/>
+                <polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+                <line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+              <span>Resize</span>
+            </button>
+            
+            <button class="sidebar-link" data-section="transparency">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              <span>Transparency</span>
+            </button>
+          </div>
+          
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <div class="content-wrapper">
+          <form id="process-form">
+            
+            <!-- Input Section (Always Open) -->
+            <div class="section-card always-open" id="section-input-output">
+              <div class="section-header no-collapse">
+                <div class="section-header-left">
+                  <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span class="section-title">Select Images</span>
+                </div>
+              </div>
+              <div class="section-body">
+                
+                <!-- Input Mode -->
+                <div class="form-group">
+                  <div class="input-mode-switch">
+                    <button type="button" class="input-mode-btn active" data-mode="files">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                      </svg>
+                      Files
+                    </button>
+                    <button type="button" class="input-mode-btn" data-mode="folder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                      </svg>
+                      Folder
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Drop Zone -->
+                <div class="drop-zone" id="drop-zone">
+                  <input type="file" id="input-files" class="drop-zone-input" multiple accept="image/png,image/jpeg,image/webp,image/avif">
+                  <input type="file" id="input-folder" class="drop-zone-input hidden" webkitdirectory directory multiple>
+                  <div class="drop-zone-content">
+                    <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p class="drop-zone-text" id="drop-zone-text"><strong>Drop images here</strong> or click to browse</p>
+                    <p class="drop-zone-hint" id="drop-zone-hint">Supports PNG, JPG, WebP, AVIF</p>
+                  </div>
+                </div>
+                
+                <!-- Folder mode privacy notice -->
+                <div id="folder-privacy-notice" class="privacy-notice hidden">
+                  <strong>Privacy note:</strong> Files are processed locally on your computer. No files are uploaded to the internet.
+                  <span class="privacy-note-hint">Your browser may ask for permission to access this folder.</span>
+                </div>
+                
+                <!-- File List Preview -->
+                <div id="file-list-preview" class="file-list-preview hidden">
+                  <div class="file-list-header">
+                    <span class="file-list-count" id="file-count">0 files selected</span>
+                    <button type="button" class="file-list-toggle" id="toggle-file-list">Show files</button>
+                  </div>
+                  <div class="file-list-items" id="file-list-items"></div>
+                </div>
+                
+              </div>
+            </div>
+
+            <!-- Format & Quality Section -->
+            <div class="section-card expanded" id="section-format">
+              <div class="section-header">
+                <div class="section-header-left">
+                  <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span class="section-title">Format & Quality</span>
+                  <span class="section-hint" data-tooltip="Quality affects file size: lower quality = smaller files">(compression)</span>
+                </div>
+                <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div class="section-body">
+                
+                <!-- Format -->
+                <div class="form-group">
+                  <label class="form-label" for="format">Output Format</label>
+                  <select id="format" class="input-select">
+                    <option value="">Keep original format</option>
+                    <option value="png">PNG - Lossless, supports transparency</option>
+                    <option value="jpg">JPG - Lossy, best for photos</option>
+                    <option value="webp">WebP - Modern, great compression</option>
+                    <option value="avif">AVIF - Best compression (newer browsers)</option>
+                  </select>
+                  <p class="form-helper">Different formats have different compression methods and file sizes.</p>
+                </div>
+                
+                <!-- Quality -->
+                <div class="form-group">
+                  <label class="form-label">
+                    Quality 
+                    <span class="slider-value-inline" id="quality-value">80</span>
+                  </label>
+                  <div class="slider-wrapper">
+                    <span class="slider-label">Smaller file</span>
+                    <input type="range" id="quality" class="input-slider" min="1" max="100" value="80">
+                    <span class="slider-label">Better quality</span>
+                  </div>
+                  <p class="form-helper" id="quality-helper">Lower = more compression (smaller file, less quality). Higher = less compression (larger file, better quality). For JPG, WebP, AVIF.</p>
+                </div>
+                
+                <!-- Lossless -->
+                <div class="form-group">
+                  <div class="toggle-wrapper">
+                    <label class="toggle">
+                      <input type="checkbox" id="lossless">
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label-content" for="lossless">
+                      <span class="toggle-label-text">Lossless compression</span>
+                      <span class="toggle-label-hint">No quality loss, but larger files. For WebP and AVIF.</span>
+                    </label>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+
+            <!-- Output & Naming Section -->
+            <div class="section-card expanded" id="section-output">
+              <div class="section-header">
+                <div class="section-header-left">
+                  <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span class="section-title">Output & Naming</span>
+                </div>
+                <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div class="section-body">
+                
+                <!-- Output Directory -->
+                <div class="form-group">
+                  <label class="form-label" for="output-dir">Output Directory</label>
+                  <input type="text" id="output-dir" class="input-text" placeholder="~/pulp-image-results/..." readonly>
+                  <div class="toggle-wrapper mt-1">
+                    <label class="toggle toggle-small">
+                      <input type="checkbox" id="use-custom-output">
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label-text-small" for="use-custom-output">Use custom directory</label>
+                  </div>
+                </div>
+                
+                <!-- Rename Pattern -->
+                <div class="form-group">
+                  <label class="form-label" for="rename-pattern">Rename Pattern <span class="label-optional">(optional)</span></label>
+                  <input type="text" id="rename-pattern" class="input-text" placeholder="{name}.{ext}">
+                  <p class="form-helper">
+                    Tokens: <code>{name}</code> = original name, <code>{ext}</code> = format extension, <code>{index}</code> = number (1, 2, 3...)
+                  </p>
+                  <p class="form-helper text-primary" id="rename-preview"></p>
+                </div>
+                
+                <!-- Auto Suffix -->
+                <div class="form-group">
+                  <div class="toggle-wrapper">
+                    <label class="toggle toggle-small">
+                      <input type="checkbox" id="auto-suffix">
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label-content" for="auto-suffix">
+                      <span class="toggle-label-text-small">Add dimensions to filename</span>
+                      <span class="toggle-label-hint">e.g., photo-800w.webp or photo-800x600.webp</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Overwrite -->
+                <div class="form-group">
+                  <div class="toggle-wrapper">
+                    <label class="toggle toggle-small">
+                      <input type="checkbox" id="overwrite">
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label-text-small" for="overwrite">Overwrite existing files</label>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+
+            <!-- Resize Section -->
+            <div class="section-card" id="section-resize">
+              <div class="section-header">
+                <div class="section-header-left">
+                  <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 3 21 3 21 9"/>
+                    <polyline points="9 21 3 21 3 15"/>
+                    <line x1="21" y1="3" x2="14" y2="10"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                  <span class="section-title">Resize</span>
+                </div>
+                <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div class="section-body">
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="width">Width <span class="label-unit">px</span></label>
+                    <input type="number" id="width" class="input-number" min="1" placeholder="Auto">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="height">Height <span class="label-unit">px</span></label>
+                    <input type="number" id="height" class="input-number" min="1" placeholder="Auto">
+                  </div>
+                </div>
+                <p class="form-helper">Leave both empty for original size. Set one dimension to maintain aspect ratio.</p>
+                
+              </div>
+            </div>
+
+            <!-- Transparency Section -->
+            <div class="section-card" id="section-transparency">
+              <div class="section-header">
+                <div class="section-header-left">
+                  <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  <span class="section-title">Transparency</span>
+                </div>
+                <svg class="section-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div class="section-body">
+                
+                <p class="form-helper mb-2">When converting to JPG (which doesn't support transparency):</p>
+                
+                <!-- Alpha Mode -->
+                <div class="form-group">
+                  <div class="radio-group-vertical">
+                    <label class="radio-option-card">
+                      <input type="radio" name="alpha-mode" value="flatten" checked>
+                      <div class="radio-option-content">
+                        <span class="radio-option-title">Flatten onto background</span>
+                        <span class="radio-option-desc">Replace transparent areas with a solid color</span>
+                      </div>
+                    </label>
+                    <label class="radio-option-card">
+                      <input type="radio" name="alpha-mode" value="error">
+                      <div class="radio-option-content">
+                        <span class="radio-option-title">Error if transparent</span>
+                        <span class="radio-option-desc">Fail processing if image has transparency</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Background Color -->
+                <div class="form-group">
+                  <label class="form-label">Background Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="background-color" class="input-color" value="#ffffff">
+                    <input type="text" id="background-hex" class="color-hex-input" value="#ffffff" readonly>
+                    <span class="color-picker-hint">Used when flattening</span>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel" id="results-panel">
+              <div class="results-header">
+                <h2 class="results-title">Results</h2>
+                <button type="button" class="btn btn-secondary btn-small" id="open-results-folder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Open Folder
+                </button>
+              </div>
+              <div id="open-folder-fallback" class="folder-fallback hidden">
+                <p class="folder-fallback-message">Could not open folder automatically. You can open it manually:</p>
+                <code class="folder-fallback-path" id="fallback-path"></code>
+              </div>
+              <div id="results-content"></div>
+            </div>
+
+          </form>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Action Bar (Sticky Footer) -->
+    <div class="action-bar">
+      <button type="button" class="btn btn-ghost" id="reset-btn">Reset</button>
+      <button type="submit" form="process-form" class="btn btn-primary" id="process-btn" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="18 15 12 9 6 15"/>
+          <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
+        Process Images
       </button>
-    </main>
+    </div>
+
   </div>
+
+  <!-- Global Tooltip -->
+  <div id="tooltip" class="tooltip" role="tooltip"></div>
+
+  <!-- Back to Top Button -->
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="18 15 12 9 6 15"/>
+    </svg>
+  </button>
 
   <script src="app.js"></script>
 </body>
 </html>
-
